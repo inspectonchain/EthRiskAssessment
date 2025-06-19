@@ -74,26 +74,32 @@ export class TransactionAnalysisService {
     const connections = new Set<string>();
     
     try {
-      // Get more transactions for better analysis
+      // Get transactions for this address from Etherscan API directly
       const transactions = await web3Service.getRecentTransactions(address, 50);
+      console.log(`Multi-hop: Getting transactions for ${address}, found ${transactions.length} transactions`);
       
       for (const tx of transactions) {
         const fromAddr = tx.from?.toLowerCase();
-        const toAddr = tx.to?.toLowerCase();
+        const toAddr = tx.to?.toLowerCase(); 
         const currentAddr = address.toLowerCase();
+        
+        console.log(`Multi-hop: Transaction ${tx.hash}: from=${fromAddr}, to=${toAddr}, current=${currentAddr}`);
         
         // Add addresses that transacted with this address
         if (fromAddr && fromAddr !== currentAddr) {
           connections.add(fromAddr);
+          console.log(`Multi-hop: Added from address: ${fromAddr}`);
         }
         if (toAddr && toAddr !== currentAddr) {
           connections.add(toAddr);
+          console.log(`Multi-hop: Added to address: ${toAddr}`);
         }
       }
     } catch (error) {
-      console.warn(`Failed to get transactions for ${address}:`, error);
+      console.error(`Multi-hop: Failed to get transactions for ${address}:`, error);
     }
     
+    console.log(`Multi-hop: Found ${connections.size} connected addresses for ${address}: ${Array.from(connections).join(', ')}`);
     return Array.from(connections).map(addr => ({ address: addr }));
   }
 
