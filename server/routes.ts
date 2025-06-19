@@ -61,10 +61,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         balance,
         walletLabel,
         tokenBalances,
-        recentTransactions,
+        recentTransactions: recentTransactions.map(tx => ({
+          ...tx,
+          timestamp: tx.timestamp.toISOString()
+        })),
         transactionCount,
-        firstTransaction,
-        riskAssessment,
+        firstTransaction: firstTransaction?.toISOString() || null,
+        riskAssessment: {
+          riskScore: riskAssessment.riskScore,
+          riskLevel: riskAssessment.riskLevel,
+          connections: riskAssessment.connections || [],
+          riskFactors: riskAssessment.riskFactors || [],
+          recommendation: riskAssessment.recommendation
+        },
       });
     } catch (error) {
       console.error("Error analyzing address:", error);

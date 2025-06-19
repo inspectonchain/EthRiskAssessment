@@ -44,8 +44,8 @@ export const riskAssessments = pgTable("risk_assessments", {
   address: text("address").notNull(),
   riskScore: integer("risk_score").notNull(),
   riskLevel: text("risk_level").notNull(),
-  connections: jsonb("connections"),
-  riskFactors: jsonb("risk_factors"),
+  connections: jsonb("connections").notNull(),
+  riskFactors: jsonb("risk_factors").notNull(),
   recommendation: text("recommendation"),
   assessedAt: timestamp("assessed_at").defaultNow().notNull(),
 });

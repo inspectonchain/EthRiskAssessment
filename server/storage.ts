@@ -115,8 +115,13 @@ export class MemStorage implements IStorage {
   async createWalletLabel(label: InsertWalletLabel): Promise<WalletLabel> {
     const id = this.currentId++;
     const walletLabel: WalletLabel = {
-      ...label,
       id,
+      address: label.address,
+      label: label.label,
+      category: label.category,
+      confidence: label.confidence || "0.95",
+      source: label.source || "Internal Database",
+      isActive: label.isActive !== undefined ? label.isActive : true,
       createdAt: new Date(),
     };
     this.walletLabels.set(label.address.toLowerCase(), walletLabel);
@@ -134,8 +139,12 @@ export class MemStorage implements IStorage {
   async createSanctionedAddress(address: InsertSanctionedAddress): Promise<SanctionedAddress> {
     const id = this.currentId++;
     const sanctionedAddress: SanctionedAddress = {
-      ...address,
       id,
+      address: address.address,
+      sanctionType: address.sanctionType,
+      description: address.description || null,
+      sanctionedBy: address.sanctionedBy,
+      isActive: address.isActive !== undefined ? address.isActive : true,
       createdAt: new Date(),
     };
     this.sanctionedAddresses.set(address.address.toLowerCase(), sanctionedAddress);
@@ -164,8 +173,13 @@ export class MemStorage implements IStorage {
   async createRiskAssessment(assessment: InsertRiskAssessment): Promise<RiskAssessment> {
     const id = this.currentId++;
     const riskAssessment: RiskAssessment = {
-      ...assessment,
       id,
+      address: assessment.address,
+      riskScore: assessment.riskScore,
+      riskLevel: assessment.riskLevel,
+      connections: assessment.connections || [],
+      riskFactors: assessment.riskFactors || [],
+      recommendation: assessment.recommendation || null,
       assessedAt: new Date(),
     };
     this.riskAssessments.set(assessment.address.toLowerCase(), riskAssessment);
