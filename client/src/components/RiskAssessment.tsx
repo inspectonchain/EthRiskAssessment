@@ -49,25 +49,6 @@ export function RiskAssessment({ analysis }: RiskAssessmentProps) {
         </div>
         
         <div className="space-y-4">
-          <div className={`${getRiskBgColor(riskAssessment.riskScore)} border rounded-lg p-4`}>
-            <div className="flex items-start space-x-3">
-              <AlertTriangle className={`${getRiskTextColor(riskAssessment.riskScore)} mt-0.5`} />
-              <div className="flex-1">
-                <h4 className={`font-medium ${getRiskTextColor(riskAssessment.riskScore)}`}>
-                  {riskAssessment.riskLevel === "VERY HIGH" ? "Direct or Very Close Connection to Sanctioned Address" :
-                   riskAssessment.riskLevel === "MEDIUM" ? "Secondary Connection to Sanctioned Address" :
-                   "No Known Connections to Sanctioned Addresses"}
-                </h4>
-                <p className={`text-sm ${getRiskTextColor(riskAssessment.riskScore)} mt-1`}>
-                  {riskAssessment.riskLevel === "VERY HIGH" ? 
-                    "This address has direct or very close connections to addresses flagged in our sanctions database." :
-                   riskAssessment.riskLevel === "MEDIUM" ? 
-                    "This address has secondary connections to addresses flagged in our sanctions database." :
-                    "This address shows no known connections to sanctioned addresses in our database."}
-                </p>
-              </div>
-            </div>
-          </div>
           
           {riskAssessment.connections.length > 0 && (
             <div>
