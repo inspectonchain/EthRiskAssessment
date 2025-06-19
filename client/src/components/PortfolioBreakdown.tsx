@@ -60,7 +60,7 @@ export function PortfolioBreakdown({ analysis }: PortfolioBreakdownProps) {
       <CardContent className="p-6">
         <div className="flex items-center space-x-2 mb-6">
           <PieChart className="text-primary" />
-          <h3 className="text-lg font-semibold text-foreground">Portfolio Breakdown</h3>
+          <h3 className="text-lg font-semibold text-foreground">Recent Activity (ETH)</h3>
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
