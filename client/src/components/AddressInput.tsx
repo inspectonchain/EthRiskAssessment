@@ -109,7 +109,7 @@ export function AddressInput({ onAnalyze, isLoading }: AddressInputProps) {
               className="flex items-center gap-2 px-3 py-2 text-xs rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50"
             >
               <span className="font-mono">0x3f5...0be</span>
-              <span className="text-muted-foreground">2-hop</span>
+              <span className="text-muted-foreground">Exchange</span>
             </button>
           </div>
         </div>
