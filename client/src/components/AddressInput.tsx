@@ -69,11 +69,12 @@ export function AddressInput({ onAnalyze, isLoading }: AddressInputProps) {
             />
             <p className="text-xs text-muted-foreground mt-1">Enter a valid Ethereum address (0x...)</p>
           </div>
-          <div className="flex items-end">
+          <div className="flex flex-col justify-start">
+            <div className="h-8 mb-2"></div>
             <Button
               onClick={handleAnalyze}
               disabled={isLoading}
-              className="px-6 py-3"
+              className="px-6 py-3 h-10"
             >
               <TrendingUp className="mr-2 h-4 w-4" />
               {isLoading ? "Analyzing..." : "Analyze"}

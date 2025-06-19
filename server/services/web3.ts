@@ -95,8 +95,7 @@ export class Web3Service {
           const timeoutId = setTimeout(() => controller.abort(), 3000);
           
           const balanceResponse = await fetch(balanceUrl, { 
-            signal: controller.signal,
-            timeout: 3000 
+            signal: controller.signal
           });
           clearTimeout(timeoutId);
           
