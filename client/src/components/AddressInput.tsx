@@ -92,7 +92,6 @@ export function AddressInput({ onAnalyze, isLoading }: AddressInputProps) {
             >
               <span className="font-mono">0xd5E...510</span>
               <span className="text-muted-foreground">Sanctioned</span>
-              <span className="px-1.5 py-0.5 bg-red-100 text-red-800 rounded text-xs">HIGH</span>
             </button>
             
             <button
@@ -102,17 +101,15 @@ export function AddressInput({ onAnalyze, isLoading }: AddressInputProps) {
             >
               <span className="font-mono">0x038...8A4</span>
               <span className="text-muted-foreground">1-hop</span>
-              <span className="px-1.5 py-0.5 bg-red-100 text-red-800 rounded text-xs">HIGH</span>
             </button>
             
             <button
-              onClick={() => setAddress("0xA9D1e08C7793af67e9d92fe308d5697FB81d3E43")}
+              onClick={() => setAddress("0x3f5ce5fbfe3e9af3971dd833d26ba9b5c936f0be")}
               disabled={isLoading}
               className="flex items-center gap-2 px-3 py-2 text-xs rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50"
             >
-              <span className="font-mono">0xA9D...E43</span>
-              <span className="text-muted-foreground">Exchange</span>
-              <span className="px-1.5 py-0.5 bg-yellow-100 text-yellow-800 rounded text-xs">MED</span>
+              <span className="font-mono">0x3f5...0be</span>
+              <span className="text-muted-foreground">2-hop</span>
             </button>
           </div>
         </div>
