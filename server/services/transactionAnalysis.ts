@@ -15,14 +15,26 @@ export class TransactionAnalysisService {
     this.addressMap = addressData;
   }
 
-  async analyzeMultiHopConnections(primaryAddress: string, maxHops: number = 2): Promise<TransactionHop[]> {
+  async analyzeMultiHopConnections(
+    primaryAddress: string, 
+    maxHops: number = 2, 
+    primaryTransactions?: Array<{
+      hash: string;
+      from: string;
+      to: string;
+      timestamp: Date;
+    }>
+  ): Promise<TransactionHop[]> {
     const connections: TransactionHop[] = [];
     this.processedAddresses.clear();
     
     console.log(`Starting multi-hop analysis for ${primaryAddress}`);
     
-    // Check direct connections (1-hop)
-    const firstHopConnections = await this.getFirstHopConnections(primaryAddress);
+    // Check direct connections (1-hop) - use provided transactions if available
+    const firstHopConnections = primaryTransactions 
+      ? this.getFirstHopConnectionsFromTransactions(primaryAddress, primaryTransactions)
+      : await this.getFirstHopConnections(primaryAddress);
+    
     console.log(`Found ${firstHopConnections.length} first-hop addresses for ${primaryAddress}`);
     
     for (const firstHop of firstHopConnections) {
@@ -68,6 +80,38 @@ export class TransactionAnalysisService {
     
     console.log(`Multi-hop analysis complete. Found ${connections.length} connections.`);
     return connections;
+  }
+
+  private getFirstHopConnectionsFromTransactions(address: string, transactions: Array<{
+    hash: string;
+    from: string;
+    to: string;
+    timestamp: Date;
+  }>): { address: string }[] {
+    const connections = new Set<string>();
+    const currentAddr = address.toLowerCase();
+    
+    console.log(`Multi-hop: Parsing ${transactions.length} pre-fetched transactions for ${address}`);
+    
+    for (const tx of transactions) {
+      const fromAddr = tx.from?.toLowerCase();
+      const toAddr = tx.to?.toLowerCase();
+      
+      console.log(`Multi-hop: Transaction ${tx.hash}: from=${fromAddr}, to=${toAddr}, current=${currentAddr}`);
+      
+      // Add addresses that transacted with this address
+      if (fromAddr && fromAddr !== currentAddr) {
+        connections.add(fromAddr);
+        console.log(`Multi-hop: Added from address: ${fromAddr}`);
+      }
+      if (toAddr && toAddr !== currentAddr) {
+        connections.add(toAddr);
+        console.log(`Multi-hop: Added to address: ${toAddr}`);
+      }
+    }
+    
+    console.log(`Multi-hop: Found ${connections.size} connected addresses from pre-fetched transactions: ${Array.from(connections).join(', ')}`);
+    return Array.from(connections).map(addr => ({ address: addr }));
   }
 
   private async getFirstHopConnections(address: string): Promise<{ address: string }[]> {

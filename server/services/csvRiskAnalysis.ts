@@ -81,7 +81,7 @@ export class CSVRiskAnalysisService {
     try {
       console.log(`Starting multi-hop analysis for address: ${address}`);
       const transactionAnalyzer = createTransactionAnalysisService(this.addressData);
-      const multiHopConnections = await transactionAnalyzer.analyzeMultiHopConnections(address, 2);
+      const multiHopConnections = await transactionAnalyzer.analyzeMultiHopConnections(address, 2, recentTransactions);
       
       console.log(`Multi-hop analysis for ${address} found ${multiHopConnections.length} connections`);
       
