@@ -48,6 +48,7 @@ export default function Home() {
   });
 
   const handleAnalyze = (address: string) => {
+    setAnalysis(null); // Clear previous results
     analyzeMutation.mutate(address);
   };
 
