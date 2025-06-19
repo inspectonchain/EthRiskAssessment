@@ -137,10 +137,30 @@ export class Web3Service {
   }>> {
     try {
       const url = `${this.etherscanBaseUrl}?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=${limit}&sort=desc&apikey=${this.etherscanApiKey}`;
-      const response = await fetch(url);
-      const data = await response.json();
+      
+      // Add retry logic for rate limiting
+      let retries = 3;
+      let data;
+      
+      while (retries > 0) {
+        const response = await fetch(url);
+        data = await response.json();
+        
+        if (data.status === "1" && data.result) {
+          break;
+        }
+        
+        if (data.status === "0" && data.message === "NOTOK") {
+          console.log(`Rate limited for ${address}, retrying in 1 second...`);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          retries--;
+        } else {
+          break;
+        }
+      }
       
       if (data.status !== "1" || !data.result) {
+        console.log(`Failed to get transactions for ${address}: status=${data.status}, message=${data.message}`);
         return [];
       }
 
