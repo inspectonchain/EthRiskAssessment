@@ -7,7 +7,7 @@ An advanced blockchain analytics tool that provides comprehensive portfolio insi
 - **Real-time Blockchain Data**: Fetches live balance, token holdings, and transaction history via Etherscan API
 - **Advanced Risk Scoring**: 3-tier risk assessment system (Low/Medium/High) based on sanctioned entity connections
 - **Multi-hop Analysis**: Detects indirect connections to sanctioned addresses through transaction networks
-- **CSV-based Intelligence**: Uses comprehensive wallet categorization database for entity identification
+- **Rich data sources**: Uses comprehensive wallet categorization database from Dune and OFAC
 - **Interactive Dashboard**: Clean, responsive interface with detailed risk breakdowns
 - **Portfolio Analysis**: Token balances, transaction patterns, and wallet activity metrics
 
@@ -43,9 +43,6 @@ An advanced blockchain analytics tool that provides comprehensive portfolio insi
    # Required
    ETHERSCAN_API_KEY=your_etherscan_api_key_here
    
-   # Optional (for PostgreSQL)
-   DATABASE_URL=postgresql://username:password@localhost:5432/dbname
-   ```
 
 ### Development
 ```bash
@@ -55,20 +52,13 @@ npm run dev
 
 The application runs on `http://localhost:5000` with both frontend and backend served from the same port.
 
-### Testing
-Use the built-in quick test addresses:
-- **Sanctioned**: `0xd5E...510` - Known sanctioned entity
-- **1-hop**: `0x038...8A4` - Direct connection to sanctioned address  
-- **Exchange**: `0x3f5...0be` - Binance exchange wallet
 
 ## 📊 Data Sources
 
 ### Wallet Intelligence
-- CSV database with categorized Ethereum addresses
+- Database with categorized Ethereum addresses from Dune and OFAC
 - Exchange wallets (Binance, Coinbase, OKX, etc.)
-- DeFi protocols and smart contracts
-- Sanctioned entities and mixer services
-- Source attribution for data provenance
+- Sanctioned entities
 
 ### Blockchain Data
 - Live transaction data via Etherscan API
@@ -153,30 +143,6 @@ The platform uses Etherscan API with built-in rate limiting (5 calls/second) to:
    pm2 start npm --name "eth-risk-analyzer" -- run dev
    ```
 
-### Database Setup
-For production deployments:
-1. Create a PostgreSQL database
-2. Set the `DATABASE_URL` environment variable
-3. Run database migrations:
-   ```bash
-   npm run db:push
-   ```
-
-## 🔐 Security Considerations
-
-- API keys are stored securely in environment variables
-- Rate limiting prevents API abuse
-- Input validation on all address inputs
-- HTTPS recommended for production deployments
-
-## 📈 Usage Analytics
-
-The platform provides detailed insights including:
-- **Portfolio Overview**: Total balance, token distribution, transaction activity
-- **Risk Assessment**: Comprehensive risk scoring with detailed explanations
-- **Connection Analysis**: Visual representation of sanctioned entity connections
-- **Transaction History**: Recent activity with USD valuations
-
 ## 🤝 Contributing
 
 1. Fork the repository
@@ -192,20 +158,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## ⚠️ Disclaimer
 
 This tool is for informational purposes only. Risk assessments should not be considered as financial or legal advice. Always conduct your own due diligence and consult with compliance professionals for regulatory requirements.
-
-## 🔗 API Documentation
-
-### Analyze Address
-```
-POST /api/analyze
-Content-Type: application/json
-
-{
-  "address": "0x742d35Cc6634C0532925a3b8D34CAC2f44C1BE24"
-}
-```
-
-Returns comprehensive analysis including balance, tokens, risk score, and connection details.
 
 ---
 
