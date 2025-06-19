@@ -99,36 +99,6 @@ export class CSVRiskAnalysisService {
           console.log(`Added ${hop.hop}-hop connection: ${hop.address}`);
         }
       }
-      
-      // Additional check: analyze intermediate addresses for indirect connections
-      if (recentTransactions && recentTransactions.length > 0) {
-        console.log(`Analyzing intermediate addresses for indirect connections...`);
-        for (const tx of recentTransactions) {
-          const intermediateAddr = tx.to?.toLowerCase();
-          if (intermediateAddr && intermediateAddr !== address.toLowerCase()) {
-            try {
-              // Check if intermediate address has sanctioned connections
-              const intermediateAnalysis = await this.analyzeAddress(intermediateAddr);
-              if (intermediateAnalysis.riskScore >= 2 && intermediateAnalysis.connections.length > 0) {
-                // This is a 2-hop connection through an intermediate address
-                const existingConnection = connections.find(c => c.address.toLowerCase() === intermediateAddr);
-                if (!existingConnection) {
-                  connections.push({
-                    address: intermediateAddr,
-                    label: `2-hop connection via intermediate address (risk score: ${intermediateAnalysis.riskScore})`,
-                    hops: 2,
-                    path: [address, intermediateAddr, intermediateAnalysis.connections[0].address],
-                    sanctionType: 'indirect_connection'
-                  });
-                  console.log(`Found 2-hop connection: ${address} → ${intermediateAddr} → ${intermediateAnalysis.connections[0].address}`);
-                }
-              }
-            } catch (error) {
-              console.log(`Failed to analyze intermediate address ${intermediateAddr}:`, error);
-            }
-          }
-        }
-      }
     } catch (error) {
       console.error('Multi-hop analysis failed:', error);
     }
@@ -258,7 +228,7 @@ export class CSVRiskAnalysisService {
       } else if (minHops === 1) {
         score = 2; // Direct connection to sanctioned address
       } else if (minHops === 2) {
-        score = 1; // Second-hop connection (lower risk but still notable)
+        score = 2; // Second-hop connection (medium risk)
       }
     }
     // Exchange addresses (medium risk)
