@@ -210,7 +210,7 @@ export class CSVRiskAnalysisService {
   }
 
   private calculateRiskScore(tags: string[], connections: Connection[]): number {
-    let score = 0;
+    let score = 1; // Default to low risk
 
     // Direct sanctioned address (highest risk)
     if (tags.some(tag => tag.includes('sanctioned') || tag.includes('ofac'))) {
@@ -226,9 +226,9 @@ export class CSVRiskAnalysisService {
       if (minHops === 0) {
         score = 3; // Self-sanctioned
       } else if (minHops === 1) {
-        score = 2; // Direct connection to sanctioned address
+        score = 3; // 1-hop connection to sanctioned address (very high risk)
       } else if (minHops === 2) {
-        score = 2; // Second-hop connection (medium risk)
+        score = 2; // 2-hop connection (medium risk)
       }
     }
     // Exchange addresses (medium risk)
@@ -237,10 +237,6 @@ export class CSVRiskAnalysisService {
     }
     // DeFi protocols (low risk)
     else if (tags.some(tag => tag.includes('defi'))) {
-      score = 1;
-    }
-    // Unknown addresses
-    else {
       score = 1;
     }
 
