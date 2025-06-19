@@ -36,7 +36,7 @@ export function AddressOverview({ analysis }: AddressOverviewProps) {
             </div>
             
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Current Balance</label>
+              <label className="text-sm font-medium text-muted-foreground">Current ETH Balance</label>
               <p className="text-lg font-semibold text-foreground">
                 {analysis.balance.balance} ETH
               </p>
@@ -65,7 +65,6 @@ export function AddressOverview({ analysis }: AddressOverviewProps) {
           </div>
         </CardContent>
       </Card>
-      
       {analysis.walletLabel && (
         <Card className="shadow-sm border-border">
           <CardContent className="p-6">
