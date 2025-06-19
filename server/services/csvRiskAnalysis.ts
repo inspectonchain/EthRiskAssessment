@@ -31,7 +31,7 @@ export interface RiskAnalysisResult {
 }
 
 export class CSVRiskAnalysisService {
-  private addressData: Map<string, string[]> = new Map();
+  private addressData: Map<string, { tags: string[], source: string }> = new Map();
   private dataLoaded = false;
 
   private async loadCSVData(): Promise<void> {
@@ -47,10 +47,13 @@ export class CSVRiskAnalysisService {
         const line = lines[i].trim();
         if (!line) continue;
         
-        const [address, tagsString] = line.split(';');
+        const [address, tagsString, source] = line.split(';');
         if (address && tagsString) {
           const tags = tagsString.split(',').map(tag => tag.trim().toLowerCase());
-          this.addressData.set(address.toLowerCase(), tags);
+          this.addressData.set(address.toLowerCase(), { 
+            tags, 
+            source: source ? source.trim() : 'Unknown' 
+          });
         }
       }
       this.dataLoaded = true;
@@ -72,7 +75,8 @@ export class CSVRiskAnalysisService {
     await this.loadCSVData();
     
     const normalizedAddress = address.toLowerCase();
-    const addressTags = this.addressData.get(normalizedAddress) || [];
+    const addressInfo = this.addressData.get(normalizedAddress);
+    const addressTags = addressInfo ? addressInfo.tags : [];
     
     // Check for direct sanctioned connections and basic transaction connections
     let connections = this.findSanctionedConnections(address, addressTags, recentTransactions);

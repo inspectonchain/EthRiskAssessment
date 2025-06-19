@@ -9,9 +9,9 @@ export interface TransactionHop {
 
 export class TransactionAnalysisService {
   private processedAddresses = new Set<string>();
-  private addressMap: Map<string, string[]> = new Map();
+  private addressMap: Map<string, { tags: string[], source: string }> = new Map();
   
-  constructor(addressData: Map<string, string[]>) {
+  constructor(addressData: Map<string, { tags: string[], source: string }>) {
     this.addressMap = addressData;
   }
 
@@ -38,10 +38,11 @@ export class TransactionAnalysisService {
     console.log(`Found ${firstHopConnections.length} first-hop addresses for ${primaryAddress}`);
     
     for (const firstHop of firstHopConnections) {
-      const tags = this.addressMap.get(firstHop.address.toLowerCase());
-      console.log(`Multi-hop: Checking first-hop address ${firstHop.address.toLowerCase()}, found tags: ${tags?.join(', ') || 'none'}`);
+      const addressInfo = this.addressMap.get(firstHop.address.toLowerCase());
+      const tags = addressInfo ? addressInfo.tags : [];
+      console.log(`Multi-hop: Checking first-hop address ${firstHop.address.toLowerCase()}, found tags: ${tags.join(', ') || 'none'}`);
       
-      if (tags && this.isSanctionedTags(tags)) {
+      if (tags.length > 0 && this.isSanctionedTags(tags)) {
         connections.push({
           address: firstHop.address,
           hop: 1,
@@ -50,7 +51,7 @@ export class TransactionAnalysisService {
         });
         console.log(`Found 1-hop sanctioned connection: ${firstHop.address} with tags: ${tags.join(', ')}`);
       } else {
-        console.log(`Multi-hop: Address ${firstHop.address} is not sanctioned (tags: ${tags?.join(', ') || 'none'})`);
+        console.log(`Multi-hop: Address ${firstHop.address} is not sanctioned (tags: ${tags.join(', ') || 'none'})`);
       }
       
       // Check second-hop connections if maxHops >= 2
