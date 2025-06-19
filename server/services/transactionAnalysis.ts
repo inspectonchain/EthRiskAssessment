@@ -159,11 +159,26 @@ export class TransactionAnalysisService {
 
       const url = `https://api.etherscan.io/api?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&sort=asc&apikey=${etherscanApiKey}`;
       
+      console.log(`Multi-hop: Fetching transactions from: ${url.replace(etherscanApiKey, 'API_KEY')}`);
+      
       const response = await fetch(url);
+      
+      if (!response.ok) {
+        console.error(`Multi-hop: HTTP error ${response.status}: ${response.statusText}`);
+        return [];
+      }
+      
       const data = await response.json();
       
+      console.log(`Multi-hop: API response for ${address}:`, {
+        status: data.status,
+        message: data.message,
+        resultCount: data.result ? data.result.length : 0,
+        sampleResult: data.result && data.result.length > 0 ? data.result[0] : null
+      });
+      
       if (data.status !== "1" || !data.result) {
-        console.log(`Multi-hop: No transactions found for ${address}`);
+        console.log(`Multi-hop: No transactions found for ${address} - status: ${data.status}, message: ${data.message}`);
         return [];
       }
 
