@@ -89,12 +89,7 @@ export function AddressOverview({ analysis }: AddressOverviewProps) {
                 </span>
               </div>
               
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-muted-foreground">Confidence</span>
-                <span className="text-sm text-foreground">
-                  High ({(parseFloat(analysis.walletLabel.confidence) * 100).toFixed(0)}%)
-                </span>
-              </div>
+
             </div>
           </CardContent>
         </Card>
