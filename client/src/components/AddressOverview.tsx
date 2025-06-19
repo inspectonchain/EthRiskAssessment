@@ -75,11 +75,26 @@ export function AddressOverview({ analysis }: AddressOverviewProps) {
             </div>
             
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-muted-foreground">Category</span>
-                <Badge variant="secondary">
-                  {analysis.walletLabel.label}
-                </Badge>
+              <div className="flex items-start justify-between">
+                <span className="text-sm font-medium text-muted-foreground">Tags</span>
+                <div className="flex flex-wrap gap-1 max-w-48">
+                  {analysis.walletLabel.label.split(',').map((tag, index) => {
+                    const trimmedTag = tag.trim();
+                    const getTagVariant = (tag: string) => {
+                      if (tag.includes('sanctioned') || tag.includes('ofac')) return 'destructive';
+                      if (tag.includes('exchange') || tag.includes('hot_wallet')) return 'outline';
+                      if (tag.includes('defi')) return 'default';
+                      if (tag.includes('mixer') || tag.includes('tornado')) return 'destructive';
+                      return 'secondary';
+                    };
+                    
+                    return (
+                      <Badge key={index} variant={getTagVariant(trimmedTag)} className="text-xs">
+                        {trimmedTag}
+                      </Badge>
+                    );
+                  })}
+                </div>
               </div>
               
               <div className="flex items-center justify-between">
