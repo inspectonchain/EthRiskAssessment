@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { createTransactionAnalysisService, type TransactionHop } from './transactionAnalysis.js';
 
 export interface AddressTag {
   address: string;
@@ -73,8 +74,31 @@ export class CSVRiskAnalysisService {
     const normalizedAddress = address.toLowerCase();
     const addressTags = this.addressData.get(normalizedAddress) || [];
     
-    // Check for direct sanctioned connections and transaction connections
-    const connections = this.findSanctionedConnections(address, addressTags, recentTransactions);
+    // Check for direct sanctioned connections and basic transaction connections
+    let connections = this.findSanctionedConnections(address, addressTags, recentTransactions);
+    
+    // Perform deep multi-hop analysis for more comprehensive risk assessment
+    try {
+      const transactionAnalyzer = createTransactionAnalysisService(this.addressData);
+      const multiHopConnections = await transactionAnalyzer.analyzeMultiHopConnections(address, 2);
+      
+      // Convert multi-hop connections to our Connection format
+      for (const hop of multiHopConnections) {
+        const existingConnection = connections.find(c => c.address.toLowerCase() === hop.address.toLowerCase());
+        if (!existingConnection) {
+          connections.push({
+            address: hop.address,
+            label: `${hop.hop}-hop connection to sanctioned address (${hop.tags?.join(', ')})`,
+            hops: hop.hop,
+            path: hop.path,
+            sanctionType: hop.tags?.filter(tag => this.isSanctionedTag(tag)).join(', ')
+          });
+        }
+      }
+    } catch (error) {
+      console.warn('Multi-hop analysis failed, using basic connection analysis:', error);
+    }
+    
     const riskScore = this.calculateRiskScore(addressTags, connections);
     const riskLevel = this.getRiskLevel(riskScore);
     const riskFactors = this.generateRiskFactors(address, addressTags, connections);
@@ -192,9 +216,16 @@ export class CSVRiskAnalysisService {
     else if (tags.some(tag => tag.includes('mixer') || tag.includes('tornado_cash'))) {
       score = 3;
     }
-    // Check for connections to sanctioned addresses
-    else if (connections.some(conn => conn.hops === 1 && conn.sanctionType)) {
-      score = 2; // Medium risk for 1-hop connections to sanctioned addresses
+    // Check for connections to sanctioned addresses with hop-based scoring
+    else if (connections.length > 0) {
+      const minHops = Math.min(...connections.map(conn => conn.hops));
+      if (minHops === 0) {
+        score = 3; // Self-sanctioned
+      } else if (minHops === 1) {
+        score = 2; // Direct connection to sanctioned address
+      } else if (minHops === 2) {
+        score = 1; // Second-hop connection (lower risk but still notable)
+      }
     }
     // Exchange addresses (medium risk)
     else if (tags.some(tag => tag.includes('exchange') || tag.includes('hot_wallet'))) {
@@ -240,12 +271,22 @@ export class CSVRiskAnalysisService {
     }
 
     // Check for connections to sanctioned addresses
-    const sanctionedConnections = connections.filter(conn => conn.hops === 1 && conn.sanctionType);
-    if (sanctionedConnections.length > 0) {
+    const oneHopConnections = connections.filter(conn => conn.hops === 1 && conn.sanctionType);
+    const twoHopConnections = connections.filter(conn => conn.hops === 2 && conn.sanctionType);
+    
+    if (oneHopConnections.length > 0) {
       factors.push({
-        factor: "Sanctioned Connection",
+        factor: "Direct Sanctioned Connection",
         status: "negative",
-        description: `Direct transaction history with ${sanctionedConnections.length} sanctioned address(es)`
+        description: `Direct transaction history with ${oneHopConnections.length} sanctioned address(es)`
+      });
+    }
+    
+    if (twoHopConnections.length > 0) {
+      factors.push({
+        factor: "Indirect Sanctioned Connection", 
+        status: "negative",
+        description: `2-hop connection to ${twoHopConnections.length} sanctioned address(es) through intermediaries`
       });
     }
 
@@ -290,11 +331,18 @@ export class CSVRiskAnalysisService {
     }
 
     if (riskScore >= 2) {
-      const sanctionedConnections = connections.filter(conn => conn.hops === 1 && conn.sanctionType);
-      if (sanctionedConnections.length > 0) {
-        return "MEDIUM RISK: Address has transaction history with sanctioned entities. Proceed with caution.";
+      const oneHopConnections = connections.filter(conn => conn.hops === 1 && conn.sanctionType);
+      if (oneHopConnections.length > 0) {
+        return "MEDIUM RISK: Address has direct transaction history with sanctioned entities. Proceed with caution.";
       }
       return "MEDIUM RISK: Exchange address detected. Verify legitimacy before transacting.";
+    }
+
+    if (riskScore >= 1) {
+      const twoHopConnections = connections.filter(conn => conn.hops === 2 && conn.sanctionType);
+      if (twoHopConnections.length > 0) {
+        return "LOW RISK: Address has indirect connections to sanctioned entities through intermediaries. Monitor closely.";
+      }
     }
 
     return "LOW RISK: No significant risk factors identified. Standard due diligence recommended.";

@@ -1,0 +1,109 @@
+import { web3Service } from './web3.js';
+
+export interface TransactionHop {
+  address: string;
+  hop: number;
+  path: string[];
+  tags?: string[];
+}
+
+export class TransactionAnalysisService {
+  private processedAddresses = new Set<string>();
+  private addressMap: Map<string, string[]> = new Map();
+  
+  constructor(addressData: Map<string, string[]>) {
+    this.addressMap = addressData;
+  }
+
+  async analyzeMultiHopConnections(primaryAddress: string, maxHops: number = 2): Promise<TransactionHop[]> {
+    const connections: TransactionHop[] = [];
+    this.processedAddresses.clear();
+    
+    // Check direct connections (1-hop)
+    const firstHopConnections = await this.getFirstHopConnections(primaryAddress);
+    
+    for (const firstHop of firstHopConnections) {
+      const tags = this.addressMap.get(firstHop.address.toLowerCase());
+      if (tags && this.isSanctionedTags(tags)) {
+        connections.push({
+          address: firstHop.address,
+          hop: 1,
+          path: [primaryAddress, firstHop.address],
+          tags
+        });
+      }
+      
+      // Check second-hop connections if maxHops >= 2
+      if (maxHops >= 2 && !this.processedAddresses.has(firstHop.address.toLowerCase())) {
+        this.processedAddresses.add(firstHop.address.toLowerCase());
+        
+        // Rate limiting: wait between calls
+        await this.delay(200); // 5 calls per second limit
+        
+        try {
+          const secondHopConnections = await this.getFirstHopConnections(firstHop.address);
+          
+          for (const secondHop of secondHopConnections) {
+            const secondTags = this.addressMap.get(secondHop.address.toLowerCase());
+            if (secondTags && this.isSanctionedTags(secondTags)) {
+              connections.push({
+                address: secondHop.address,
+                hop: 2,
+                path: [primaryAddress, firstHop.address, secondHop.address],
+                tags: secondTags
+              });
+            }
+          }
+        } catch (error) {
+          console.warn(`Failed to analyze second-hop for ${firstHop.address}:`, error);
+        }
+      }
+    }
+    
+    return connections;
+  }
+
+  private async getFirstHopConnections(address: string): Promise<{ address: string }[]> {
+    const connections = new Set<string>();
+    
+    try {
+      // Get more transactions for better analysis
+      const transactions = await web3Service.getRecentTransactions(address, 50);
+      
+      for (const tx of transactions) {
+        const fromAddr = tx.from?.toLowerCase();
+        const toAddr = tx.to?.toLowerCase();
+        const currentAddr = address.toLowerCase();
+        
+        // Add addresses that transacted with this address
+        if (fromAddr && fromAddr !== currentAddr) {
+          connections.add(fromAddr);
+        }
+        if (toAddr && toAddr !== currentAddr) {
+          connections.add(toAddr);
+        }
+      }
+    } catch (error) {
+      console.warn(`Failed to get transactions for ${address}:`, error);
+    }
+    
+    return Array.from(connections).map(addr => ({ address: addr }));
+  }
+
+  private isSanctionedTags(tags: string[]): boolean {
+    return tags.some(tag => 
+      tag.includes('sanctioned') || 
+      tag.includes('ofac') || 
+      tag.includes('mixer') ||
+      tag.includes('tornado_cash')
+    );
+  }
+
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+}
+
+export const createTransactionAnalysisService = (addressData: Map<string, string[]>) => {
+  return new TransactionAnalysisService(addressData);
+};
