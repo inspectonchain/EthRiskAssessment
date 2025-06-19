@@ -42,8 +42,8 @@ export class CSVRiskAnalysisService {
       const csvContent = fs.readFileSync(csvPath, 'utf-8');
       const lines = csvContent.split('\n').filter(line => line.trim());
       
-      // Skip header
-      for (let i = 1; i < lines.length; i++) {
+      // Process all lines (no header)
+      for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
         
@@ -170,8 +170,9 @@ export class CSVRiskAnalysisService {
         // Check if this address received from a sanctioned address
         if (fromAddress && fromAddress !== currentAddress && !checkedAddresses.has(fromAddress)) {
           checkedAddresses.add(fromAddress);
-          const fromTags = this.addressData.get(fromAddress);
-          if (fromTags && this.isSanctionedTags(fromTags)) {
+          const fromAddressInfo = this.addressData.get(fromAddress);
+          const fromTags = fromAddressInfo ? fromAddressInfo.tags : [];
+          if (fromTags.length > 0 && this.isSanctionedTags(fromTags)) {
             connections.push({
               address: fromAddress,
               label: `Received from sanctioned address (${fromTags.join(', ')})`,
@@ -185,8 +186,9 @@ export class CSVRiskAnalysisService {
         // Check if this address sent to a sanctioned address
         if (toAddress && toAddress !== currentAddress && !checkedAddresses.has(toAddress)) {
           checkedAddresses.add(toAddress);
-          const toTags = this.addressData.get(toAddress);
-          if (toTags && this.isSanctionedTags(toTags)) {
+          const toAddressInfo = this.addressData.get(toAddress);
+          const toTags = toAddressInfo ? toAddressInfo.tags : [];
+          if (toTags.length > 0 && this.isSanctionedTags(toTags)) {
             connections.push({
               address: toAddress,
               label: `Sent to sanctioned address (${toTags.join(', ')})`,
@@ -354,12 +356,19 @@ export class CSVRiskAnalysisService {
 
   getAddressLabel(address: string): { label: string; category: string; confidence: string; source: string } | undefined {
     const normalizedAddress = address.toLowerCase();
-    const tags = this.addressData.get(normalizedAddress);
+    const addressInfo = this.addressData.get(normalizedAddress);
     
-    if (!tags || tags.length === 0) {
-      return undefined;
+    if (!addressInfo || addressInfo.tags.length === 0) {
+      return {
+        label: "Unknown",
+        category: "Unknown", 
+        confidence: "Low",
+        source: "Unknown"
+      };
     }
 
+    const tags = addressInfo.tags;
+    
     // Determine primary category
     let category = "Unknown";
     if (tags.some(tag => tag.includes('exchange'))) category = "Exchange";
@@ -371,7 +380,7 @@ export class CSVRiskAnalysisService {
       label: tags.join(', '),
       category,
       confidence: "High",
-      source: "Internal Database"
+      source: addressInfo.source
     };
   }
 }

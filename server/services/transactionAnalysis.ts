@@ -66,10 +66,11 @@ export class TransactionAnalysisService {
           console.log(`Checking ${secondHopConnections.length} second-hop addresses from ${firstHop.address}`);
           
           for (const secondHop of secondHopConnections) {
-            const secondTags = this.addressMap.get(secondHop.address.toLowerCase());
-            console.log(`Multi-hop: Checking second-hop address ${secondHop.address.toLowerCase()}, found tags: ${secondTags?.join(', ') || 'none'}`);
+            const secondAddressInfo = this.addressMap.get(secondHop.address.toLowerCase());
+            const secondTags = secondAddressInfo ? secondAddressInfo.tags : [];
+            console.log(`Multi-hop: Checking second-hop address ${secondHop.address.toLowerCase()}, found tags: ${secondTags.join(', ') || 'none'}`);
             
-            if (secondTags && this.isSanctionedTags(secondTags)) {
+            if (secondTags.length > 0 && this.isSanctionedTags(secondTags)) {
               connections.push({
                 address: secondHop.address,
                 hop: 2,
@@ -166,6 +167,6 @@ export class TransactionAnalysisService {
   }
 }
 
-export const createTransactionAnalysisService = (addressData: Map<string, string[]>) => {
+export const createTransactionAnalysisService = (addressData: Map<string, { tags: string[], source: string }>) => {
   return new TransactionAnalysisService(addressData);
 };
