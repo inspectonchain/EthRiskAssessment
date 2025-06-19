@@ -66,8 +66,8 @@ export class CSVRiskAnalysisService {
     value: string;
     usdValue: string;
     timestamp: Date;
-    from?: string;
-    to?: string;
+    from: string;
+    to: string;
   }>): Promise<RiskAnalysisResult> {
     await this.loadCSVData();
     
