@@ -59,14 +59,22 @@ export class CSVRiskAnalysisService {
     }
   }
 
-  async analyzeAddress(address: string): Promise<RiskAnalysisResult> {
+  async analyzeAddress(address: string, recentTransactions?: Array<{
+    hash: string;
+    type: string;
+    value: string;
+    usdValue: string;
+    timestamp: Date;
+    from?: string;
+    to?: string;
+  }>): Promise<RiskAnalysisResult> {
     await this.loadCSVData();
     
     const normalizedAddress = address.toLowerCase();
     const addressTags = this.addressData.get(normalizedAddress) || [];
     
-    // Check for direct sanctioned connections
-    const connections = this.findSanctionedConnections(address, addressTags);
+    // Check for direct sanctioned connections and transaction connections
+    const connections = this.findSanctionedConnections(address, addressTags, recentTransactions);
     const riskScore = this.calculateRiskScore(addressTags, connections);
     const riskLevel = this.getRiskLevel(riskScore);
     const riskFactors = this.generateRiskFactors(address, addressTags, connections);
@@ -82,7 +90,15 @@ export class CSVRiskAnalysisService {
     };
   }
 
-  private findSanctionedConnections(address: string, tags: string[]): Connection[] {
+  private findSanctionedConnections(address: string, tags: string[], transactions?: Array<{
+    hash: string;
+    type: string;
+    value: string;
+    usdValue: string;
+    timestamp: Date;
+    from?: string;
+    to?: string;
+  }>): Connection[] {
     const connections: Connection[] = [];
     
     // Check if this address itself is sanctioned
@@ -110,7 +126,59 @@ export class CSVRiskAnalysisService {
       });
     }
 
+    // Check transaction connections to sanctioned addresses
+    if (transactions) {
+      const checkedAddresses = new Set<string>();
+      
+      for (const tx of transactions) {
+        const fromAddress = tx.from?.toLowerCase();
+        const toAddress = tx.to?.toLowerCase();
+        const currentAddress = address.toLowerCase();
+        
+        // Check if this address received from a sanctioned address
+        if (fromAddress && fromAddress !== currentAddress && !checkedAddresses.has(fromAddress)) {
+          checkedAddresses.add(fromAddress);
+          const fromTags = this.addressData.get(fromAddress);
+          if (fromTags && this.isSanctionedTags(fromTags)) {
+            connections.push({
+              address: fromAddress,
+              label: `Received from sanctioned address (${fromTags.join(', ')})`,
+              hops: 1,
+              path: [fromAddress, currentAddress],
+              sanctionType: fromTags.filter(tag => this.isSanctionedTag(tag)).join(', ')
+            });
+          }
+        }
+        
+        // Check if this address sent to a sanctioned address
+        if (toAddress && toAddress !== currentAddress && !checkedAddresses.has(toAddress)) {
+          checkedAddresses.add(toAddress);
+          const toTags = this.addressData.get(toAddress);
+          if (toTags && this.isSanctionedTags(toTags)) {
+            connections.push({
+              address: toAddress,
+              label: `Sent to sanctioned address (${toTags.join(', ')})`,
+              hops: 1,
+              path: [currentAddress, toAddress],
+              sanctionType: toTags.filter(tag => this.isSanctionedTag(tag)).join(', ')
+            });
+          }
+        }
+      }
+    }
+
     return connections;
+  }
+
+  private isSanctionedTag(tag: string): boolean {
+    return tag.includes('sanctioned') || 
+           tag.includes('ofac') || 
+           tag.includes('mixer') ||
+           tag.includes('tornado_cash');
+  }
+
+  private isSanctionedTags(tags: string[]): boolean {
+    return tags.some(tag => this.isSanctionedTag(tag));
   }
 
   private calculateRiskScore(tags: string[], connections: Connection[]): number {
@@ -123,6 +191,10 @@ export class CSVRiskAnalysisService {
     // Mixer or tornado cash
     else if (tags.some(tag => tag.includes('mixer') || tag.includes('tornado_cash'))) {
       score = 3;
+    }
+    // Check for connections to sanctioned addresses
+    else if (connections.some(conn => conn.hops === 1 && conn.sanctionType)) {
+      score = 2; // Medium risk for 1-hop connections to sanctioned addresses
     }
     // Exchange addresses (medium risk)
     else if (tags.some(tag => tag.includes('exchange') || tag.includes('hot_wallet'))) {
@@ -167,6 +239,16 @@ export class CSVRiskAnalysisService {
       });
     }
 
+    // Check for connections to sanctioned addresses
+    const sanctionedConnections = connections.filter(conn => conn.hops === 1 && conn.sanctionType);
+    if (sanctionedConnections.length > 0) {
+      factors.push({
+        factor: "Sanctioned Connection",
+        status: "negative",
+        description: `Direct transaction history with ${sanctionedConnections.length} sanctioned address(es)`
+      });
+    }
+
     // Check for exchange status
     if (tags.some(tag => tag.includes('exchange'))) {
       factors.push({
@@ -185,8 +267,8 @@ export class CSVRiskAnalysisService {
       });
     }
 
-    // If no tags found
-    if (tags.length === 0) {
+    // If no tags found and no connections
+    if (tags.length === 0 && connections.length === 0) {
       factors.push({
         factor: "Unknown Address",
         status: "neutral",
@@ -208,6 +290,10 @@ export class CSVRiskAnalysisService {
     }
 
     if (riskScore >= 2) {
+      const sanctionedConnections = connections.filter(conn => conn.hops === 1 && conn.sanctionType);
+      if (sanctionedConnections.length > 0) {
+        return "MEDIUM RISK: Address has transaction history with sanctioned entities. Proceed with caution.";
+      }
       return "MEDIUM RISK: Exchange address detected. Verify legitimacy before transacting.";
     }
 

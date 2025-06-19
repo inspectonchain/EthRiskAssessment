@@ -19,17 +19,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid Ethereum address" });
       }
 
-      // Perform risk analysis using CSV data
-      const riskAssessment = await csvRiskAnalysisService.analyzeAddress(address);
-
-      // Get additional address information
+      // Get additional address information first
       const [balance, tokenBalances, recentTransactions, transactionCount, firstTransaction] = await Promise.all([
         web3Service.getAddressBalance(address),
         web3Service.getTokenBalances(address),
-        web3Service.getRecentTransactions(address, 5),
+        web3Service.getRecentTransactions(address, 10), // Get more transactions for better analysis
         web3Service.getTransactionCount(address),
         web3Service.getFirstTransactionDate(address),
       ]);
+
+      // Perform risk analysis using CSV data with transaction context
+      const riskAssessment = await csvRiskAnalysisService.analyzeAddress(address, recentTransactions);
 
       // Get wallet label from CSV service
       const walletLabel = csvRiskAnalysisService.getAddressLabel(address);
