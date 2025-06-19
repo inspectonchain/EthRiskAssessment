@@ -58,7 +58,7 @@ export class TransactionAnalysisService {
         this.processedAddresses.add(firstHop.address.toLowerCase());
         
         // Rate limiting: wait between calls
-        await this.delay(200); // 5 calls per second limit
+        await this.delay(300); // 5 calls per second limit
         
         try {
           const secondHopConnections = await this.getFirstHopConnections(firstHop.address);
