@@ -19,8 +19,11 @@ export class TransactionAnalysisService {
     const connections: TransactionHop[] = [];
     this.processedAddresses.clear();
     
+    console.log(`Starting multi-hop analysis for ${primaryAddress}`);
+    
     // Check direct connections (1-hop)
     const firstHopConnections = await this.getFirstHopConnections(primaryAddress);
+    console.log(`Found ${firstHopConnections.length} first-hop addresses for ${primaryAddress}`);
     
     for (const firstHop of firstHopConnections) {
       const tags = this.addressMap.get(firstHop.address.toLowerCase());
@@ -31,6 +34,7 @@ export class TransactionAnalysisService {
           path: [primaryAddress, firstHop.address],
           tags
         });
+        console.log(`Found 1-hop sanctioned connection: ${firstHop.address}`);
       }
       
       // Check second-hop connections if maxHops >= 2
@@ -42,6 +46,7 @@ export class TransactionAnalysisService {
         
         try {
           const secondHopConnections = await this.getFirstHopConnections(firstHop.address);
+          console.log(`Checking ${secondHopConnections.length} second-hop addresses from ${firstHop.address}`);
           
           for (const secondHop of secondHopConnections) {
             const secondTags = this.addressMap.get(secondHop.address.toLowerCase());
@@ -52,6 +57,7 @@ export class TransactionAnalysisService {
                 path: [primaryAddress, firstHop.address, secondHop.address],
                 tags: secondTags
               });
+              console.log(`Found 2-hop sanctioned connection: ${primaryAddress} → ${firstHop.address} → ${secondHop.address}`);
             }
           }
         } catch (error) {
@@ -60,6 +66,7 @@ export class TransactionAnalysisService {
       }
     }
     
+    console.log(`Multi-hop analysis complete. Found ${connections.length} connections.`);
     return connections;
   }
 

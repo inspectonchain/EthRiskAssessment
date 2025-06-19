@@ -79,8 +79,11 @@ export class CSVRiskAnalysisService {
     
     // Perform deep multi-hop analysis for more comprehensive risk assessment
     try {
+      console.log(`Starting multi-hop analysis for address: ${address}`);
       const transactionAnalyzer = createTransactionAnalysisService(this.addressData);
       const multiHopConnections = await transactionAnalyzer.analyzeMultiHopConnections(address, 2);
+      
+      console.log(`Multi-hop analysis for ${address} found ${multiHopConnections.length} connections`);
       
       // Convert multi-hop connections to our Connection format
       for (const hop of multiHopConnections) {
@@ -93,10 +96,11 @@ export class CSVRiskAnalysisService {
             path: hop.path,
             sanctionType: hop.tags?.filter(tag => this.isSanctionedTag(tag)).join(', ')
           });
+          console.log(`Added ${hop.hop}-hop connection: ${hop.address}`);
         }
       }
     } catch (error) {
-      console.warn('Multi-hop analysis failed, using basic connection analysis:', error);
+      console.error('Multi-hop analysis failed:', error);
     }
     
     const riskScore = this.calculateRiskScore(addressTags, connections);
