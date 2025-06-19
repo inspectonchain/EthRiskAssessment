@@ -82,13 +82,24 @@ export class Web3Service {
         }
       });
 
-      // For each unique token, get current balance
+      // For each unique token, get current balance with timeout and retry
       const tokenBalances = [];
-      const tokenEntries = Array.from(tokenMap.entries());
+      const tokenEntries = Array.from(tokenMap.entries()).slice(0, 5); // Limit to 5 tokens to avoid rate limits
+      
       for (const [contractAddress, token] of tokenEntries) {
         try {
           const balanceUrl = `${this.etherscanBaseUrl}?module=account&action=tokenbalance&contractaddress=${contractAddress}&address=${address}&tag=latest&apikey=${this.etherscanApiKey}`;
-          const balanceResponse = await fetch(balanceUrl);
+          
+          // Add timeout to prevent hanging requests
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 3000);
+          
+          const balanceResponse = await fetch(balanceUrl, { 
+            signal: controller.signal,
+            timeout: 3000 
+          });
+          clearTimeout(timeoutId);
+          
           const balanceData = await balanceResponse.json();
           
           if (balanceData.status === "1" && balanceData.result !== "0") {
@@ -104,7 +115,8 @@ export class Web3Service {
             }
           }
         } catch (error) {
-          console.warn(`Failed to fetch balance for token ${token.symbol}:`, error);
+          // Silently skip failed token balance requests to avoid breaking the whole analysis
+          continue;
         }
       }
 

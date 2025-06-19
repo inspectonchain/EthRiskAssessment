@@ -17,20 +17,31 @@ export default function Home() {
 
   const analyzeMutation = useMutation({
     mutationFn: async (address: string) => {
-      const response = await apiRequest("POST", "/api/analyze", { address });
-      return response.json();
+      try {
+        const response = await apiRequest("POST", "/api/analyze", { address });
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error("API request failed:", error);
+        throw error;
+      }
     },
     onSuccess: (data: AddressAnalysis) => {
-      setAnalysis(data);
-      toast({
-        title: "Analysis Complete",
-        description: "Address analysis and risk assessment completed successfully.",
-      });
+      try {
+        setAnalysis(data);
+        toast({
+          title: "Analysis Complete",
+          description: "Address analysis and risk assessment completed successfully.",
+        });
+      } catch (error) {
+        console.error("Error processing success:", error);
+      }
     },
     onError: (error: Error) => {
+      console.error("Analysis error:", error);
       toast({
         title: "Analysis Failed",
-        description: error.message,
+        description: error.message || "An unexpected error occurred",
         variant: "destructive",
       });
     },
