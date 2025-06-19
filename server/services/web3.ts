@@ -1,24 +1,33 @@
 import { ethers } from "ethers";
 
 export class Web3Service {
-  private provider: ethers.JsonRpcProvider;
-  private ethPriceUsd: number = 2426.89; // Mock ETH price
+  private etherscanApiKey: string;
+  private etherscanBaseUrl: string = "https://api.etherscan.io/api";
+  private ethPriceUsd: number = 2426.89; // This could be fetched from a price API
 
   constructor() {
-    // Use a public RPC endpoint - in production, use environment variables
-    const rpcUrl = process.env.ETH_RPC_URL || "https://cloudflare-eth.com";
-    this.provider = new ethers.JsonRpcProvider(rpcUrl);
+    this.etherscanApiKey = process.env.ETHERSCAN_API_KEY || "";
+    if (!this.etherscanApiKey) {
+      console.warn("ETHERSCAN_API_KEY not found, some features may not work");
+    }
   }
 
   async getAddressBalance(address: string): Promise<{ balance: string; usdValue: string }> {
     try {
-      // In production, this would use a real RPC endpoint
-      // For demo purposes, return realistic mock data
-      const mockBalance = "2.456789";
-      const usdValue = (parseFloat(mockBalance) * this.ethPriceUsd).toFixed(2);
+      const url = `${this.etherscanBaseUrl}?module=account&action=balance&address=${address}&tag=latest&apikey=${this.etherscanApiKey}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      if (data.status !== "1") {
+        throw new Error(`Etherscan API error: ${data.message}`);
+      }
+      
+      const balanceWei = data.result;
+      const balanceEth = ethers.formatEther(balanceWei);
+      const usdValue = (parseFloat(balanceEth) * this.ethPriceUsd).toFixed(2);
       
       return {
-        balance: mockBalance,
+        balance: parseFloat(balanceEth).toFixed(6),
         usdValue
       };
     } catch (error) {
@@ -29,9 +38,15 @@ export class Web3Service {
 
   async getTransactionCount(address: string): Promise<number> {
     try {
-      // In production, this would use a real RPC endpoint
-      // For demo purposes, return realistic mock data
-      return 127;
+      const url = `${this.etherscanBaseUrl}?module=proxy&action=eth_getTransactionCount&address=${address}&tag=latest&apikey=${this.etherscanApiKey}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      if (!data.result) {
+        throw new Error(`Etherscan API error: ${data.error || 'Unknown error'}`);
+      }
+      
+      return parseInt(data.result, 16);
     } catch (error) {
       console.error("Error fetching transaction count:", error);
       throw new Error("Failed to fetch transaction count");
@@ -45,25 +60,59 @@ export class Web3Service {
     usdValue: string;
     contractAddress?: string;
   }>> {
-    // Mock token balances - in production, use a service like Alchemy or Moralis
-    const mockTokens = [
-      {
-        symbol: "USDC",
-        name: "USD Coin",
-        balance: "2500.00",
-        usdValue: "2500.00",
-        contractAddress: "0xA0b86a33E6441b01c4c4C4c4c4c4c4c4c4c4c4c4"
-      },
-      {
-        symbol: "UNI",
-        name: "Uniswap",
-        balance: "125.50",
-        usdValue: "847.38",
-        contractAddress: "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"
+    try {
+      const url = `${this.etherscanBaseUrl}?module=account&action=tokentx&address=${address}&page=1&offset=100&sort=desc&apikey=${this.etherscanApiKey}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      if (data.status !== "1" || !data.result) {
+        return []; // Return empty array if no token transactions
       }
-    ];
 
-    return mockTokens;
+      // Get unique tokens from recent transactions
+      const tokenMap = new Map();
+      data.result.forEach((tx: any) => {
+        if (tx.tokenSymbol && tx.contractAddress) {
+          tokenMap.set(tx.contractAddress.toLowerCase(), {
+            symbol: tx.tokenSymbol,
+            name: tx.tokenName,
+            contractAddress: tx.contractAddress,
+            decimals: parseInt(tx.tokenDecimal)
+          });
+        }
+      });
+
+      // For each unique token, get current balance
+      const tokenBalances = [];
+      for (const contractAddress of tokenMap.keys()) {
+        const token = tokenMap.get(contractAddress);
+        try {
+          const balanceUrl = `${this.etherscanBaseUrl}?module=account&action=tokenbalance&contractaddress=${contractAddress}&address=${address}&tag=latest&apikey=${this.etherscanApiKey}`;
+          const balanceResponse = await fetch(balanceUrl);
+          const balanceData = await balanceResponse.json();
+          
+          if (balanceData.status === "1" && balanceData.result !== "0") {
+            const balance = parseFloat(ethers.formatUnits(balanceData.result, token.decimals));
+            if (balance > 0) {
+              tokenBalances.push({
+                symbol: token.symbol,
+                name: token.name,
+                balance: balance.toFixed(2),
+                usdValue: "0.00", // Would need price API to calculate USD value
+                contractAddress: token.contractAddress
+              });
+            }
+          }
+        } catch (error) {
+          console.warn(`Failed to fetch balance for token ${token.symbol}:`, error);
+        }
+      }
+
+      return tokenBalances.slice(0, 10); // Limit to top 10 tokens
+    } catch (error) {
+      console.error("Error fetching token balances:", error);
+      return [];
+    }
   }
 
   async getRecentTransactions(address: string, limit: number = 10): Promise<Array<{
@@ -75,44 +124,47 @@ export class Web3Service {
     from: string;
     to: string;
   }>> {
-    // Mock recent transactions - in production, use blockchain explorer APIs
-    const mockTransactions = [
-      {
-        hash: "0x1234567890abcdef...",
-        type: "Received ETH",
-        value: "+0.5 ETH",
-        usdValue: "$1,213.45",
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-        from: "0x1234567890abcdef1234567890abcdef12345678",
-        to: address
-      },
-      {
-        hash: "0xabcdef1234567890...",
-        type: "Uniswap Swap",
-        value: "USDC → UNI",
-        usdValue: "$500.00",
-        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
-        from: address,
-        to: "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
-      },
-      {
-        hash: "0x567890abcdef1234...",
-        type: "Sent ETH",
-        value: "-1.2 ETH",
-        usdValue: "$2,912.28",
-        timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
-        from: address,
-        to: "0x9876543210fedcba9876543210fedcba98765432"
+    try {
+      const url = `${this.etherscanBaseUrl}?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=${limit}&sort=desc&apikey=${this.etherscanApiKey}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      if (data.status !== "1" || !data.result) {
+        return [];
       }
-    ];
 
-    return mockTransactions.slice(0, limit);
+      return data.result.map((tx: any) => {
+        const isReceived = tx.to.toLowerCase() === address.toLowerCase();
+        const valueEth = ethers.formatEther(tx.value);
+        const usdValue = (parseFloat(valueEth) * this.ethPriceUsd).toFixed(2);
+        
+        return {
+          hash: tx.hash,
+          type: isReceived ? "Received ETH" : "Sent ETH",
+          value: isReceived ? `+${parseFloat(valueEth).toFixed(4)} ETH` : `-${parseFloat(valueEth).toFixed(4)} ETH`,
+          usdValue: `$${usdValue}`,
+          timestamp: new Date(parseInt(tx.timeStamp) * 1000),
+          from: tx.from,
+          to: tx.to
+        };
+      });
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      return [];
+    }
   }
 
   async getFirstTransactionDate(address: string): Promise<Date | null> {
     try {
-      // Mock first transaction date - in production, use blockchain explorer APIs
-      return new Date("2021-03-15");
+      const url = `${this.etherscanBaseUrl}?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=1&sort=asc&apikey=${this.etherscanApiKey}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      if (data.status !== "1" || !data.result || data.result.length === 0) {
+        return null;
+      }
+      
+      return new Date(parseInt(data.result[0].timeStamp) * 1000);
     } catch (error) {
       console.error("Error fetching first transaction:", error);
       return null;
