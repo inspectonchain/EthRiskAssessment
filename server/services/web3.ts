@@ -84,8 +84,8 @@ export class Web3Service {
 
       // For each unique token, get current balance
       const tokenBalances = [];
-      for (const contractAddress of tokenMap.keys()) {
-        const token = tokenMap.get(contractAddress);
+      const tokenEntries = Array.from(tokenMap.entries());
+      for (const [contractAddress, token] of tokenEntries) {
         try {
           const balanceUrl = `${this.etherscanBaseUrl}?module=account&action=tokenbalance&contractaddress=${contractAddress}&address=${address}&tag=latest&apikey=${this.etherscanApiKey}`;
           const balanceResponse = await fetch(balanceUrl);
