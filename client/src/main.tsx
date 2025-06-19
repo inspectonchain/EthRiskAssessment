@@ -2,23 +2,59 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 
-// Add global error handlers to prevent runtime errors
-window.addEventListener('unhandledrejection', (event) => {
-  // Filter out plugin connection errors
-  if (event.reason && typeof event.reason === 'object' && 
-      event.reason.message && event.reason.message.includes('Could not establish connection')) {
-    event.preventDefault();
+// Override console methods to filter out browser extension errors
+const originalConsoleError = console.error;
+const originalConsoleWarn = console.warn;
+
+console.error = function(...args) {
+  const message = args.join(' ');
+  if (message.includes('Could not establish connection') ||
+      message.includes('Receiving end does not exist') ||
+      message.includes('Extension context invalidated') ||
+      message.includes('runtime.lastError')) {
     return;
   }
-  console.warn('Unhandled promise rejection:', event.reason);
+  originalConsoleError.apply(console, args);
+};
+
+console.warn = function(...args) {
+  const message = args.join(' ');
+  if (message.includes('Could not establish connection') ||
+      message.includes('Receiving end does not exist') ||
+      message.includes('Extension context invalidated') ||
+      message.includes('runtime.lastError')) {
+    return;
+  }
+  originalConsoleWarn.apply(console, args);
+};
+
+// Suppress unhandled rejection errors for browser extensions
+window.addEventListener('unhandledrejection', (event) => {
+  if (event.reason && typeof event.reason === 'object') {
+    const message = event.reason.message || '';
+    if (message.includes('Could not establish connection') ||
+        message.includes('Receiving end does not exist') ||
+        message.includes('Extension context invalidated')) {
+      event.preventDefault();
+      return;
+    }
+  }
+  // Only log actual application errors
+  if (event.reason && !event.reason.message?.includes('runtime.lastError')) {
+    console.warn('Unhandled promise rejection:', event.reason);
+  }
   event.preventDefault();
 });
 
 window.addEventListener('error', (event) => {
-  // Filter out plugin connection errors
-  if (event.error && event.error.message && 
-      event.error.message.includes('Could not establish connection')) {
-    return;
+  if (event.error && event.error.message) {
+    const message = event.error.message;
+    if (message.includes('Could not establish connection') ||
+        message.includes('Receiving end does not exist') ||
+        message.includes('Extension context invalidated') ||
+        message.includes('runtime.lastError')) {
+      return;
+    }
   }
   console.warn('Global error:', event.error);
 });
