@@ -124,8 +124,8 @@ export class TransactionAnalysisService {
     const connections = new Set<string>();
     
     try {
-      // Get ALL transactions for this address from Etherscan API
-      const transactions = await this.getAllTransactions(address);
+      // Use the web3Service to avoid duplicate API calls and respect rate limits
+      const transactions = await web3Service.getRecentTransactions(address, 100);
       console.log(`Multi-hop: Getting transactions for ${address}, found ${transactions.length} transactions`);
       
       for (const tx of transactions) {
@@ -149,49 +149,7 @@ export class TransactionAnalysisService {
     return Array.from(connections).map(addr => ({ address: addr }));
   }
 
-  private async getAllTransactions(address: string): Promise<Array<{from: string, to: string, hash: string}>> {
-    try {
-      const etherscanApiKey = process.env.ETHERSCAN_API_KEY;
-      if (!etherscanApiKey) {
-        console.warn('No Etherscan API key found');
-        return [];
-      }
 
-      const url = `https://api.etherscan.io/api?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&sort=asc&apikey=${etherscanApiKey}`;
-      
-      console.log(`Multi-hop: Fetching transactions from: ${url.replace(etherscanApiKey, 'API_KEY')}`);
-      
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        console.error(`Multi-hop: HTTP error ${response.status}: ${response.statusText}`);
-        return [];
-      }
-      
-      const data = await response.json();
-      
-      console.log(`Multi-hop: API response for ${address}:`, {
-        status: data.status,
-        message: data.message,
-        resultCount: data.result ? data.result.length : 0,
-        sampleResult: data.result && data.result.length > 0 ? data.result[0] : null
-      });
-      
-      if (data.status !== "1" || !data.result) {
-        console.log(`Multi-hop: No transactions found for ${address} - status: ${data.status}, message: ${data.message}`);
-        return [];
-      }
-
-      return data.result.map((tx: any) => ({
-        from: tx.from,
-        to: tx.to,
-        hash: tx.hash
-      }));
-    } catch (error) {
-      console.error(`Multi-hop: Error fetching transactions for ${address}:`, error);
-      return [];
-    }
-  }
 
   private isSanctionedTags(tags: string[]): boolean {
     return tags.some(tag => 
