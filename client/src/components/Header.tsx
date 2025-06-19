@@ -10,7 +10,7 @@ export function Header() {
               <Shield className="text-primary-foreground text-lg" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-foreground">ETH Risk Tracer</h1>
+              <h1 className="text-xl font-bold text-foreground">ETH Address Profile</h1>
               <p className="text-sm text-muted-foreground">Address Profile & Risk Assessment</p>
             </div>
           </div>
