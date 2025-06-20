@@ -34,6 +34,7 @@ export interface AddressAnalysis {
       hops: number;
       path: string[];
       sanctionType?: string;
+      transactionHash?: string;
     }>;
     riskFactors: Array<{
       factor: string;

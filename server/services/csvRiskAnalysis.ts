@@ -13,6 +13,7 @@ export interface Connection {
   hops: number;
   path: string[];
   sanctionType?: string;
+  transactionHash?: string;
 }
 
 export interface RiskFactor {
@@ -178,7 +179,8 @@ export class CSVRiskAnalysisService {
               label: `Received from sanctioned address (${fromTags.join(', ')})`,
               hops: 1,
               path: [fromAddress, currentAddress],
-              sanctionType: fromTags.filter(tag => this.isSanctionedTag(tag)).join(', ')
+              sanctionType: fromTags.filter(tag => this.isSanctionedTag(tag)).join(', '),
+              transactionHash: tx.hash
             });
           }
         }
@@ -194,7 +196,8 @@ export class CSVRiskAnalysisService {
               label: `Sent to sanctioned address (${toTags.join(', ')})`,
               hops: 1,
               path: [currentAddress, toAddress],
-              sanctionType: toTags.filter(tag => this.isSanctionedTag(tag)).join(', ')
+              sanctionType: toTags.filter(tag => this.isSanctionedTag(tag)).join(', '),
+              transactionHash: tx.hash
             });
           }
         }
