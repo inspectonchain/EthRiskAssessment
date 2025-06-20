@@ -17,12 +17,17 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="container mx-auto p-4">
+        <h1 className="text-2xl font-bold mb-4">ETH Risk Tracer</h1>
+        <p>Testing basic React rendering...</p>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Router />
+          </TooltipProvider>
+        </QueryClientProvider>
+      </div>
+    </div>
   );
 }
 
