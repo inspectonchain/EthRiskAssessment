@@ -111,6 +111,15 @@ export function AddressInput({ onAnalyze, isLoading }: AddressInputProps) {
               <span className="font-mono">0x3f5...0be</span>
               <span className="text-muted-foreground">Exchange</span>
             </button>
+            
+            <button
+              onClick={() => setAddress("0x226ee078494f9e401Ba4daAc1b01cdF6C772ffb1")}
+              disabled={isLoading}
+              className="flex items-center gap-2 px-3 py-2 text-xs rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-50"
+            >
+              <span className="font-mono">0x226...fb1</span>
+              <span className="text-muted-foreground">2-hop</span>
+            </button>
           </div>
         </div>
       </CardContent>
