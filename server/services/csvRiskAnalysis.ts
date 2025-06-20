@@ -176,6 +176,15 @@ export class CSVRiskAnalysisService {
           checkedAddresses.add(fromAddress);
           const fromAddressInfo = this.addressData.get(fromAddress);
           const fromTags = fromAddressInfo ? fromAddressInfo.tags : [];
+          
+          // Debug logging for specific address
+          if (fromAddress === "0xd5ed34b52ac4ab84d8fa8a231a3218bbf01ed510") {
+            console.log(`Debug: Found transaction from known sanctioned address: ${fromAddress}`);
+            console.log(`Debug: Address info:`, fromAddressInfo);
+            console.log(`Debug: Tags:`, fromTags);
+            console.log(`Debug: Is sanctioned:`, this.isSanctionedTags(fromTags));
+          }
+          
           if (fromTags.length > 0 && this.isSanctionedTags(fromTags)) {
             connections.push({
               address: fromAddress,
@@ -184,6 +193,7 @@ export class CSVRiskAnalysisService {
               path: [fromAddress, currentAddress],
               sanctionType: fromTags.filter(tag => this.isSanctionedTag(tag)).join(', ')
             });
+            console.log(`Found 1-hop sanctioned connection: received from ${fromAddress}`);
           }
         }
         
