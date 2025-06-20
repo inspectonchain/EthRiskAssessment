@@ -103,26 +103,14 @@ export function RiskAssessment({ analysis }: RiskAssessmentProps) {
                           <p className="text-xs text-red-600 mt-1">
                             <span className="font-semibold">Sanctions:</span> {connection.sanctionType}
                           </p>
-                          <div className="flex gap-3 mt-1">
-                            <a
-                              href={`https://etherscan.io/address/${connection.address}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-red-700 hover:text-red-900 underline"
-                            >
-                              View Address →
-                            </a>
-                            {connection.transactionHash && (
-                              <a
-                                href={`https://etherscan.io/tx/${connection.transactionHash}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-xs text-red-700 hover:text-red-900 underline"
-                              >
-                                View Transaction →
-                              </a>
-                            )}
-                          </div>
+                          <a
+                            href={`https://etherscan.io/address/${connection.address}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-red-700 hover:text-red-900 underline mt-1 inline-block"
+                          >
+                            View on Etherscan →
+                          </a>
                         </div>
                       )}
                     </div>
