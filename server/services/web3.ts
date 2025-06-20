@@ -126,6 +126,21 @@ export class Web3Service {
     }
   }
 
+  // Helper function to decode ERC-20 transfer recipient from input data
+  private decodeERC20Transfer(input: string): string | null {
+    if (!input || input.length < 74) return null;
+    
+    // Check if it's a transfer function call (0xa9059cbb)
+    if (input.startsWith('0xa9059cbb')) {
+      // Extract recipient address from the input data
+      // The recipient address starts at position 34 (2 + 8 + 24) and is 40 characters long
+      const recipientHex = input.substring(34, 74);
+      return '0x' + recipientHex;
+    }
+    
+    return null;
+  }
+
   async getRecentTransactions(address: string, maxCount: number = 10000): Promise<Array<{
     hash: string;
     type: string;
@@ -170,17 +185,29 @@ export class Web3Service {
 
       // Map and slice to maxCount
       return transactions.slice(0, maxCount).map((tx: any) => {
-        const isReceived = tx.to.toLowerCase() === address.toLowerCase();
+        // Check if this is an ERC-20 transfer
+        const erc20Recipient = this.decodeERC20Transfer(tx.input);
+        
+        let actualTo = tx.to;
+        let actualFrom = tx.from;
+        
+        // If it's an ERC-20 transfer, use the decoded recipient as the "to" address
+        if (erc20Recipient) {
+          actualTo = erc20Recipient;
+        }
+        
+        const isReceived = actualTo.toLowerCase() === address.toLowerCase();
         const valueEth = ethers.formatEther(tx.value);
         const usdValue = (parseFloat(valueEth) * this.ethPriceUsd).toFixed(2);
+        
         return {
           hash: tx.hash,
           type: isReceived ? "Received ETH" : "Sent ETH",
           value: isReceived ? `+${parseFloat(valueEth).toFixed(4)} ETH` : `-${parseFloat(valueEth).toFixed(4)} ETH`,
           usdValue: `$${usdValue}`,
           timestamp: new Date(parseInt(tx.timeStamp) * 1000),
-          from: tx.from,
-          to: tx.to
+          from: actualFrom,
+          to: actualTo
         };
       });
     } catch (error) {
