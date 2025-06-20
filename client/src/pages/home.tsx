@@ -31,7 +31,8 @@ export default function Home() {
         setAnalysis(data);
         toast({
           title: "Analysis Complete",
-          description: "Address analysis and risk assessment completed successfully.",
+          description:
+            "Address analysis and risk assessment completed successfully.",
         });
       } catch (error) {
         console.error("Error processing success:", error);
@@ -55,16 +56,22 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <AddressInput onAnalyze={handleAnalyze} isLoading={analyzeMutation.isPending} />
-        
+        <AddressInput
+          onAnalyze={handleAnalyze}
+          isLoading={analyzeMutation.isPending}
+        />
+
         {analyzeMutation.isPending && (
           <Card className="shadow-sm border-border mt-8">
             <CardContent className="p-8">
               <div className="flex items-center justify-center space-x-3">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                <span className="text-muted-foreground">Analyzing address and calculating risk score...</span>
+                <span className="text-muted-foreground">
+                  Analyzing address and calculating risk score...(up to 5
+                  minutes for 2-hop analysis)
+                </span>
               </div>
             </CardContent>
           </Card>
@@ -76,16 +83,16 @@ export default function Home() {
               <div className="lg:col-span-1">
                 <AddressOverview analysis={analysis} />
               </div>
-              
+
               <div className="lg:col-span-2">
                 <RiskAssessment analysis={analysis} />
               </div>
             </div>
-            
+
             <div className="mt-8">
               <PortfolioBreakdown analysis={analysis} />
             </div>
-            
+
             <div className="mt-8">
               <RiskLegend />
             </div>
