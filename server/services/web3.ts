@@ -126,7 +126,7 @@ export class Web3Service {
     }
   }
 
-  async getRecentTransactions(address: string, limit: number = 10): Promise<Array<{
+  async getRecentTransactions(address: string, maxCount: number = 10000): Promise<Array<{
     hash: string;
     type: string;
     value: string;
@@ -135,40 +135,44 @@ export class Web3Service {
     from: string;
     to: string;
   }>> {
+    const transactions: any[] = [];
+    const offset = 1000; // records per page
+    let page = 1;
+    let totalFetched = 0;
+
     try {
-      const url = `${this.etherscanBaseUrl}?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=${limit}&sort=desc&apikey=${this.etherscanApiKey}`;
-      
-      // Add retry logic for rate limiting
-      let retries = 3;
-      let data;
-      
-      while (retries > 0) {
-        const response = await fetch(url);
-        data = await response.json();
-        
-        if (data.status === "1" && data.result) {
-          break;
+      while (totalFetched < maxCount) {
+        const fetchCount = Math.min(offset, maxCount - totalFetched);
+        const url = `${this.etherscanBaseUrl}?module=account&action=txlist&address=${address}` +
+                    `&startblock=0&endblock=99999999&page=${page}&offset=${fetchCount}&sort=desc&apikey=${this.etherscanApiKey}`;
+
+        // Basic retry logic for rate limit
+        let retries = 3;
+        let data: any;
+        while (retries > 0) {
+          const response = await fetch(url);
+          data = await response.json();
+          if (data.status === "1" && data.result) break;
+          if (data.status === "0" && data.message === "NOTOK") {
+            await new Promise(res => setTimeout(res, 1000));
+            retries--;
+          } else {
+            break;
+          }
         }
-        
-        if (data.status === "0" && data.message === "NOTOK") {
-          console.log(`Rate limited for ${address}, retrying in 1 second...`);
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          retries--;
-        } else {
-          break;
-        }
-      }
-      
-      if (data.status !== "1" || !data.result) {
-        console.log(`Failed to get transactions for ${address}: status=${data.status}, message=${data.message}`);
-        return [];
+
+        if (!data.result || data.result.length === 0) break;
+        transactions.push(...data.result);
+        totalFetched += data.result.length;
+        if (data.result.length < fetchCount) break; // Last page reached
+        page++;
       }
 
-      return data.result.map((tx: any) => {
+      // Map and slice to maxCount
+      return transactions.slice(0, maxCount).map((tx: any) => {
         const isReceived = tx.to.toLowerCase() === address.toLowerCase();
         const valueEth = ethers.formatEther(tx.value);
         const usdValue = (parseFloat(valueEth) * this.ethPriceUsd).toFixed(2);
-        
         return {
           hash: tx.hash,
           type: isReceived ? "Received ETH" : "Sent ETH",
@@ -184,6 +188,7 @@ export class Web3Service {
       return [];
     }
   }
+
 
   async getFirstTransactionDate(address: string): Promise<Date | null> {
     try {
