@@ -49,7 +49,9 @@ export class CSVRiskAnalysisService {
         
         const [address, tagsString, source] = line.split(';');
         if (address && tagsString) {
-          const tags = tagsString.split(',').map(tag => tag.trim().toLowerCase());
+          const tags = tagsString.split(',').map(tag => 
+            tag.trim().toLowerCase().replace(/['"]/g, '')
+          );
           this.addressData.set(address.toLowerCase(), { 
             tags, 
             source: source ? source.trim() : 'Unknown' 
@@ -88,6 +90,14 @@ export class CSVRiskAnalysisService {
       const multiHopConnections = await transactionAnalyzer.analyzeMultiHopConnections(address, 2, recentTransactions);
       
       console.log(`Multi-hop analysis for ${address} found ${multiHopConnections.length} connections`);
+      
+      // Debug: Test sanctioned address detection
+      const testSanctionedAddress = "0x098B716B8Aaf21512996dC57EB0615e2383E2f96".toLowerCase();
+      const testInfo = this.addressData.get(testSanctionedAddress);
+      if (testInfo) {
+        console.log(`Debug: Found test sanctioned address with tags: ${testInfo.tags.join(', ')}`);
+        console.log(`Debug: Sanctioned check result: ${this.isSanctionedTags(testInfo.tags)}`);
+      }
       
       // Convert multi-hop connections to our Connection format
       for (const hop of multiHopConnections) {
@@ -205,10 +215,12 @@ export class CSVRiskAnalysisService {
   }
 
   private isSanctionedTag(tag: string): boolean {
-    return tag.includes('sanctioned') || 
-           tag.includes('ofac') || 
-           tag.includes('mixer') ||
-           tag.includes('tornado_cash');
+    const normalizedTag = tag.toLowerCase().trim();
+    return normalizedTag.includes('sanctioned') || 
+           normalizedTag.includes('ofac') || 
+           normalizedTag.includes('mixer') ||
+           normalizedTag.includes('tornado_cash') ||
+           normalizedTag.includes('tornado cash');
   }
 
   private isSanctionedTags(tags: string[]): boolean {
