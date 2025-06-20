@@ -49,9 +49,7 @@ export class CSVRiskAnalysisService {
         
         const [address, tagsString, source] = line.split(';');
         if (address && tagsString) {
-          const tags = tagsString.split(',').map(tag => 
-            tag.trim().toLowerCase().replace(/['"]/g, '')
-          );
+          const tags = tagsString.split(',').map(tag => tag.trim().toLowerCase());
           this.addressData.set(address.toLowerCase(), { 
             tags, 
             source: source ? source.trim() : 'Unknown' 
@@ -83,9 +81,6 @@ export class CSVRiskAnalysisService {
     // Check for direct sanctioned connections and basic transaction connections
     let connections = this.findSanctionedConnections(address, addressTags, recentTransactions);
     
-    // Additional check: search for specific known sanctioned transactions
-    this.checkSpecificSanctionedConnections(address, connections);
-    
     // Perform deep multi-hop analysis for more comprehensive risk assessment
     try {
       console.log(`Starting multi-hop analysis for address: ${address}`);
@@ -93,8 +88,6 @@ export class CSVRiskAnalysisService {
       const multiHopConnections = await transactionAnalyzer.analyzeMultiHopConnections(address, 2, recentTransactions);
       
       console.log(`Multi-hop analysis for ${address} found ${multiHopConnections.length} connections`);
-      
-
       
       // Convert multi-hop connections to our Connection format
       for (const hop of multiHopConnections) {
@@ -179,15 +172,6 @@ export class CSVRiskAnalysisService {
           checkedAddresses.add(fromAddress);
           const fromAddressInfo = this.addressData.get(fromAddress);
           const fromTags = fromAddressInfo ? fromAddressInfo.tags : [];
-          
-          // Debug logging for specific address
-          if (fromAddress === "0xd5ed34b52ac4ab84d8fa8a231a3218bbf01ed510") {
-            console.log(`Debug: Found transaction from known sanctioned address: ${fromAddress}`);
-            console.log(`Debug: Address info:`, fromAddressInfo);
-            console.log(`Debug: Tags:`, fromTags);
-            console.log(`Debug: Is sanctioned:`, this.isSanctionedTags(fromTags));
-          }
-          
           if (fromTags.length > 0 && this.isSanctionedTags(fromTags)) {
             connections.push({
               address: fromAddress,
@@ -196,7 +180,6 @@ export class CSVRiskAnalysisService {
               path: [fromAddress, currentAddress],
               sanctionType: fromTags.filter(tag => this.isSanctionedTag(tag)).join(', ')
             });
-            console.log(`Found 1-hop sanctioned connection: received from ${fromAddress}`);
           }
         }
         
@@ -221,36 +204,11 @@ export class CSVRiskAnalysisService {
     return connections;
   }
 
-  private async checkSpecificSanctionedConnections(address: string, connections: Connection[]): Promise<void> {
-    // For the specific case mentioned by the user
-    if (address.toLowerCase() === "0x4cb900befd522a99e74ae92f3d338680106ece1f") {
-      const sanctionedAddress = "0xd5ed34b52ac4ab84d8fa8a231a3218bbf01ed510";
-      const sanctionedInfo = this.addressData.get(sanctionedAddress);
-      
-      if (sanctionedInfo && this.isSanctionedTags(sanctionedInfo.tags)) {
-        // Check if connection already exists
-        const existingConnection = connections.find(c => c.address.toLowerCase() === sanctionedAddress);
-        if (!existingConnection) {
-          connections.push({
-            address: sanctionedAddress,
-            label: `Historical connection to sanctioned address (${sanctionedInfo.tags.join(', ')})`,
-            hops: 1,
-            path: [sanctionedAddress, address],
-            sanctionType: sanctionedInfo.tags.filter(tag => this.isSanctionedTag(tag)).join(', ')
-          });
-          console.log(`Added historical sanctioned connection: ${sanctionedAddress} -> ${address}`);
-        }
-      }
-    }
-  }
-
   private isSanctionedTag(tag: string): boolean {
-    const normalizedTag = tag.toLowerCase().trim();
-    return normalizedTag.includes('sanctioned') || 
-           normalizedTag.includes('ofac') || 
-           normalizedTag.includes('mixer') ||
-           normalizedTag.includes('tornado_cash') ||
-           normalizedTag.includes('tornado cash');
+    return tag.includes('sanctioned') || 
+           tag.includes('ofac') || 
+           tag.includes('mixer') ||
+           tag.includes('tornado_cash');
   }
 
   private isSanctionedTags(tags: string[]): boolean {

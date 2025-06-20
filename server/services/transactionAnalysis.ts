@@ -154,20 +154,12 @@ export class TransactionAnalysisService {
 
 
   private isSanctionedTags(tags: string[]): boolean {
-    const isSanctioned = tags.some(tag => {
-      const normalizedTag = tag.toLowerCase().trim();
-      return normalizedTag.includes('sanctioned') || 
-             normalizedTag.includes('ofac') || 
-             normalizedTag.includes('mixer') ||
-             normalizedTag.includes('tornado_cash') ||
-             normalizedTag.includes('tornado cash');
-    });
-    
-    if (isSanctioned) {
-      console.log(`Found sanctioned tags: ${tags.join(', ')}`);
-    }
-    
-    return isSanctioned;
+    return tags.some(tag => 
+      tag.includes('sanctioned') || 
+      tag.includes('ofac') || 
+      tag.includes('mixer') ||
+      tag.includes('tornado_cash')
+    );
   }
 
   private delay(ms: number): Promise<void> {
