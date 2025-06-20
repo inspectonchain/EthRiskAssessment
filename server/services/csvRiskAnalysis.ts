@@ -91,13 +91,7 @@ export class CSVRiskAnalysisService {
       
       console.log(`Multi-hop analysis for ${address} found ${multiHopConnections.length} connections`);
       
-      // Debug: Test sanctioned address detection
-      const testSanctionedAddress = "0x098B716B8Aaf21512996dC57EB0615e2383E2f96".toLowerCase();
-      const testInfo = this.addressData.get(testSanctionedAddress);
-      if (testInfo) {
-        console.log(`Debug: Found test sanctioned address with tags: ${testInfo.tags.join(', ')}`);
-        console.log(`Debug: Sanctioned check result: ${this.isSanctionedTags(testInfo.tags)}`);
-      }
+
       
       // Convert multi-hop connections to our Connection format
       for (const hop of multiHopConnections) {
