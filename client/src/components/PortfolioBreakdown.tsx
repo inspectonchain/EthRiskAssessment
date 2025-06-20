@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { PieChart, ArrowDown, ArrowUp, RefreshCw } from "lucide-react";
 import type { AddressAnalysis } from "@/lib/web3";
 
@@ -7,6 +9,7 @@ interface PortfolioBreakdownProps {
 }
 
 export function PortfolioBreakdown({ analysis }: PortfolioBreakdownProps) {
+  const [showAllTransactions, setShowAllTransactions] = useState(false);
   const getTransactionIcon = (type: string) => {
     if (type.toLowerCase().includes("received")) {
       return <ArrowDown className="text-green-600 text-xs" />;
@@ -53,7 +56,7 @@ export function PortfolioBreakdown({ analysis }: PortfolioBreakdownProps) {
         </div>
         
         <div className="space-y-3">
-          {analysis.recentTransactions.map((tx, index) => (
+          {(showAllTransactions ? analysis.recentTransactions : analysis.recentTransactions.slice(0, 10)).map((tx, index) => (
             <div key={index} className="flex items-center justify-between p-3 border border-border rounded-lg">
               <div className="flex items-center space-x-3">
                 <div className={`w-8 h-8 ${getTransactionBgColor(tx.type)} rounded-full flex items-center justify-center`}>
@@ -71,6 +74,19 @@ export function PortfolioBreakdown({ analysis }: PortfolioBreakdownProps) {
             </div>
           ))}
         </div>
+        
+        {analysis.recentTransactions.length > 10 && (
+          <div className="mt-4 text-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAllTransactions(!showAllTransactions)}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              {showAllTransactions ? "Show less" : `Show all ${analysis.recentTransactions.length} transactions`}
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
