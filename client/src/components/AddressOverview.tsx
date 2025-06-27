@@ -11,7 +11,9 @@ interface AddressOverviewProps {
 export function AddressOverview({ analysis }: AddressOverviewProps) {
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "Unknown";
-    return new Date(dateString).toLocaleDateString('en-US', {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "Invalid date";
+    return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'

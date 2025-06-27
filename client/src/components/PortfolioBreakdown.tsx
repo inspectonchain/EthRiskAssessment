@@ -31,7 +31,11 @@ export function PortfolioBreakdown({ analysis }: PortfolioBreakdownProps) {
   };
 
   const formatTimeAgo = (timestamp: string) => {
+    if (!timestamp) return "Unknown time";
+    
     const date = new Date(timestamp);
+    if (isNaN(date.getTime())) return "Invalid date";
+    
     const now = new Date();
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
     

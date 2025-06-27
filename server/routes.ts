@@ -56,7 +56,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tokenBalances,
         recentTransactions: recentTransactions.map(tx => ({
           ...tx,
-          timestamp: tx.timestamp.toISOString()
+          timestamp: tx.timestamp ? tx.timestamp.toISOString() : new Date().toISOString()
         })),
         transactionCount,
         firstTransaction: firstTransaction?.toISOString() || null,

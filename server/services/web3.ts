@@ -205,7 +205,7 @@ export class Web3Service {
           type: isReceived ? "Received ETH" : "Sent ETH",
           value: isReceived ? `+${parseFloat(valueEth).toFixed(4)} ETH` : `-${parseFloat(valueEth).toFixed(4)} ETH`,
           usdValue: `$${usdValue}`,
-          timestamp: new Date(parseInt(tx.timeStamp) * 1000),
+          timestamp: tx.timeStamp ? new Date(parseInt(tx.timeStamp) * 1000) : new Date(),
           from: actualFrom,
           to: actualTo
         };
