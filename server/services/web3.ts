@@ -33,7 +33,7 @@ export class Web3Service {
       const balanceWei = data.result;
       console.log(`Converting balance: ${balanceWei} wei (type: ${typeof balanceWei})`);
       
-      if (!balanceWei || balanceWei === "0" || balanceWei === 0) {
+      if (!balanceWei || balanceWei === "0" || balanceWei === 0 || balanceWei === "") {
         console.log(`Zero balance detected for ${address}`);
         return {
           balance: "0.000000",
