@@ -20,7 +20,7 @@ export class Web3Service {
       const response = await fetch(url);
       const data = await response.json();
       
-      console.log(`Etherscan API response:`, data);
+      console.log(`Balance API response for ${address}:`, data);
       
       if (data.status !== "1") {
         console.error(`Etherscan API error: ${data.message || data.result}. Please check API key.`);
