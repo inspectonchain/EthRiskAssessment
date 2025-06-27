@@ -23,15 +23,11 @@ export class Web3Service {
       console.log(`Etherscan API response:`, data);
       
       if (data.status !== "1") {
-        if (data.message === "NOTOK") {
-          console.error("Etherscan API key may be invalid or rate limited");
-          // Return fallback data instead of throwing error
-          return {
-            balance: "0.000000",
-            usdValue: "0.00"
-          };
-        }
-        throw new Error(`Etherscan API error: ${data.message}`);
+        console.error(`Etherscan API error: ${data.message || data.result}. Please check API key.`);
+        return {
+          balance: "0.000000",
+          usdValue: "0.00"
+        };
       }
       
       const balanceWei = data.result;
@@ -44,7 +40,6 @@ export class Web3Service {
       };
     } catch (error) {
       console.error("Error fetching balance:", error);
-      // Return fallback data instead of throwing error to prevent app crash
       return {
         balance: "0.000000",
         usdValue: "0.00"
