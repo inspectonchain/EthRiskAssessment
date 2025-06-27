@@ -91,6 +91,19 @@ npm run db:push  # Applies database schema using Drizzle
 - `DATABASE_URL`: Optional PostgreSQL connection string
 - `NODE_ENV`: Environment mode (development/production)
 
+## Recent Changes
+- June 27, 2025: Enhanced error handling and API fallback mechanisms
+- Fixed JavaScript errors with null value protection throughout components
+- Optimized transaction analysis to process 100 latest transactions for performance
+- Added clear messaging for API key requirements in UI when blockchain data unavailable
+- Implemented graceful degradation when Etherscan API fails
+
+## Current Status
+- Application deployed and running successfully
+- CSV-based risk analysis functioning correctly with multi-hop connection detection
+- Blockchain data display requires valid ETHERSCAN_API_KEY for accurate balance and transaction counts
+- Risk scoring system fully operational using address labeling database
+
 ## Changelog
 - June 27, 2025. Initial setup
 
