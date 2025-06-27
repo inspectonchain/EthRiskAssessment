@@ -54,7 +54,11 @@ export class Web3Service {
       const response = await fetch(url);
       const data = await response.json();
       
-      console.log(`Transaction count API response for ${address}:`, data.status, data.result?.length || 0);
+      console.log(`Transaction count API response for ${address}:`, {
+        status: data.status,
+        resultLength: data.result?.length || 0,
+        message: data.message
+      });
       
       if (data.status !== "1" || !data.result) {
         console.error("Failed to fetch transaction list");
@@ -274,11 +278,16 @@ export class Web3Service {
       const response = await fetch(url);
       const data = await response.json();
       
+      console.log(`First transaction API response for ${address}:`, data);
+      
       if (data.status !== "1" || !data.result || data.result.length === 0) {
+        console.warn(`No first transaction found for ${address}`);
         return null;
       }
       
-      return new Date(parseInt(data.result[0].timeStamp) * 1000);
+      const timestamp = parseInt(data.result[0].timeStamp) * 1000;
+      console.log(`First transaction timestamp for ${address}:`, timestamp, new Date(timestamp));
+      return new Date(timestamp);
     } catch (error) {
       console.error("Error fetching first transaction:", error);
       return null;

@@ -20,6 +20,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get additional address information first
+      console.log(`Starting data collection for address: ${address}`);
       const [balance, tokenBalances, recentTransactions, transactionCount, firstTransaction] = await Promise.all([
         web3Service.getAddressBalance(address),
         web3Service.getTokenBalances(address),
@@ -27,6 +28,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         web3Service.getTransactionCount(address),
         web3Service.getFirstTransactionDate(address),
       ]);
+      
+      console.log(`Data collection results for ${address}:`, {
+        balance,
+        transactionCount,
+        firstTransaction: firstTransaction ? firstTransaction.toISOString() : null,
+        recentTransactionsCount: recentTransactions.length
+      });
 
       // For demonstration: add a mock transaction if analyzing the test address to show connection analysis
       let transactionsForAnalysis = recentTransactions;
