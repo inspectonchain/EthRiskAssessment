@@ -76,6 +76,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           recommendation: riskAssessment.recommendation
         },
       });
+      
+      console.log(`Response summary for ${address}: Balance=${balance.balance} ETH, TxCount=${transactionCount}, FirstTx=${firstTransaction ? firstTransaction.toLocaleDateString() : 'null'}`);
     } catch (error) {
       console.error("Error analyzing address:", error);
       res.status(500).json({ error: error instanceof Error ? error.message : "Internal server error" });
