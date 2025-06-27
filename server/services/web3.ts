@@ -23,7 +23,7 @@ export class Web3Service {
       console.log(`Balance API response for ${address}:`, data);
       
       if (data.status !== "1") {
-        console.error(`Etherscan API error: ${data.message || data.result}. Please check API key.`);
+        console.error(`Etherscan API error: status=${data.status}, message=${data.message || data.result}`);
         return {
           balance: "0.000000",
           usdValue: "0.00"
@@ -31,13 +31,26 @@ export class Web3Service {
       }
       
       const balanceWei = data.result;
-      const balanceEth = ethers.formatEther(balanceWei);
+      console.log(`Converting balance: ${balanceWei} wei (type: ${typeof balanceWei})`);
+      
+      if (!balanceWei || balanceWei === "0" || balanceWei === 0) {
+        console.log(`Zero balance detected for ${address}`);
+        return {
+          balance: "0.000000",
+          usdValue: "0.00"
+        };
+      }
+      
+      const balanceEth = ethers.formatEther(balanceWei.toString());
+      console.log(`Converted to ETH: ${balanceEth}`);
       const usdValue = (parseFloat(balanceEth) * this.ethPriceUsd).toFixed(2);
       
-      return {
+      const result = {
         balance: parseFloat(balanceEth).toFixed(6),
         usdValue
       };
+      console.log(`Final balance result:`, result);
+      return result;
     } catch (error) {
       console.error("Error fetching balance:", error);
       return {
