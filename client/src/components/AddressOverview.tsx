@@ -11,9 +11,7 @@ interface AddressOverviewProps {
 export function AddressOverview({ analysis }: AddressOverviewProps) {
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "Unknown";
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return "Invalid date";
-    return date.toLocaleDateString('en-US', {
+    return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
@@ -51,9 +49,19 @@ export function AddressOverview({ analysis }: AddressOverviewProps) {
               </p>
             </div>
             
-
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">First Transaction</label>
+              <p className="text-sm text-foreground">
+                {formatDate(analysis.firstTransaction)}
+              </p>
+            </div>
             
-
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">Total Transactions</label>
+              <p className="text-sm text-foreground">
+                {analysis.transactionCount.toLocaleString()}
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>

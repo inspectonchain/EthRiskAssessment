@@ -62,62 +62,18 @@ export class Web3Service {
 
   async getTransactionCount(address: string): Promise<number> {
     try {
-      // Use txlist endpoint to get actual transaction count by fetching all transactions
-      const url = `${this.etherscanBaseUrl}?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=10000&sort=desc&apikey=${this.etherscanApiKey}`;
+      const url = `${this.etherscanBaseUrl}?module=proxy&action=eth_getTransactionCount&address=${address}&tag=latest&apikey=${this.etherscanApiKey}`;
       const response = await fetch(url);
       const data = await response.json();
       
-      console.log(`Transaction count API response for ${address}:`, {
-        status: data.status,
-        resultLength: data.result?.length || 0,
-        message: data.message
-      });
-      
-      if (data.status !== "1" || !data.result) {
-        console.error("Failed to fetch transaction list");
-        return 0;
+      if (!data.result) {
+        throw new Error(`Etherscan API error: ${data.error || 'Unknown error'}`);
       }
       
-      // If we got the maximum, we need to count across pages
-      if (data.result.length === 10000) {
-        return await this.getTransactionCountFromPages(address);
-      }
-      
-      return data.result.length;
+      return parseInt(data.result, 16);
     } catch (error) {
       console.error("Error fetching transaction count:", error);
-      return 0;
-    }
-  }
-
-  private async getTransactionCountFromPages(address: string): Promise<number> {
-    try {
-      let totalCount = 0;
-      let page = 1;
-      const offset = 10000;
-      
-      while (true) {
-        const url = `${this.etherscanBaseUrl}?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=${page}&offset=${offset}&sort=desc&apikey=${this.etherscanApiKey}`;
-        const response = await fetch(url);
-        const data = await response.json();
-        
-        if (data.status !== "1" || !data.result || data.result.length === 0) break;
-        
-        totalCount += data.result.length;
-        if (data.result.length < offset) break; // Last page
-        page++;
-        
-        // Prevent infinite loops
-        if (page > 50) break;
-        
-        // Rate limiting
-        await new Promise(resolve => setTimeout(resolve, 200));
-      }
-      
-      return totalCount;
-    } catch (error) {
-      console.error("Error counting transactions across pages:", error);
-      return 0;
+      throw new Error("Failed to fetch transaction count");
     }
   }
 
@@ -209,7 +165,7 @@ export class Web3Service {
     return null;
   }
 
-  async getRecentTransactions(address: string, maxCount: number = 100): Promise<Array<{
+  async getRecentTransactions(address: string, maxCount: number = 10000): Promise<Array<{
     hash: string;
     type: string;
     value: string;
@@ -273,7 +229,7 @@ export class Web3Service {
           type: isReceived ? "Received ETH" : "Sent ETH",
           value: isReceived ? `+${parseFloat(valueEth).toFixed(4)} ETH` : `-${parseFloat(valueEth).toFixed(4)} ETH`,
           usdValue: `$${usdValue}`,
-          timestamp: tx.timeStamp ? new Date(parseInt(tx.timeStamp) * 1000) : new Date(),
+          timestamp: new Date(parseInt(tx.timeStamp) * 1000),
           from: actualFrom,
           to: actualTo
         };
@@ -291,16 +247,11 @@ export class Web3Service {
       const response = await fetch(url);
       const data = await response.json();
       
-      console.log(`First transaction API response for ${address}:`, data);
-      
       if (data.status !== "1" || !data.result || data.result.length === 0) {
-        console.warn(`No first transaction found for ${address}`);
         return null;
       }
       
-      const timestamp = parseInt(data.result[0].timeStamp) * 1000;
-      console.log(`First transaction timestamp for ${address}:`, timestamp, new Date(timestamp));
-      return new Date(timestamp);
+      return new Date(parseInt(data.result[0].timeStamp) * 1000);
     } catch (error) {
       console.error("Error fetching first transaction:", error);
       return null;

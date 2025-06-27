@@ -20,21 +20,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get additional address information first
-      console.log(`Starting data collection for address: ${address}`);
       const [balance, tokenBalances, recentTransactions, transactionCount, firstTransaction] = await Promise.all([
         web3Service.getAddressBalance(address),
         web3Service.getTokenBalances(address),
-        web3Service.getRecentTransactions(address, 100), // Get recent transactions for analysis
+        web3Service.getRecentTransactions(address, 1000), // Get comprehensive transaction history for thorough analysis
         web3Service.getTransactionCount(address),
         web3Service.getFirstTransactionDate(address),
       ]);
-      
-      console.log(`Data collection results for ${address}:`, {
-        balance,
-        transactionCount,
-        firstTransaction: firstTransaction ? firstTransaction.toISOString() : null,
-        recentTransactionsCount: recentTransactions.length
-      });
 
       // For demonstration: add a mock transaction if analyzing the test address to show connection analysis
       let transactionsForAnalysis = recentTransactions;
@@ -64,7 +56,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tokenBalances,
         recentTransactions: recentTransactions.map(tx => ({
           ...tx,
-          timestamp: tx.timestamp ? tx.timestamp.toISOString() : new Date().toISOString()
+          timestamp: tx.timestamp.toISOString()
         })),
         transactionCount,
         firstTransaction: firstTransaction?.toISOString() || null,
@@ -76,8 +68,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           recommendation: riskAssessment.recommendation
         },
       });
-      
-      console.log(`Response summary for ${address}: Balance=${balance.balance} ETH, TxCount=${transactionCount}, FirstTx=${firstTransaction ? firstTransaction.toLocaleDateString() : 'null'}`);
     } catch (error) {
       console.error("Error analyzing address:", error);
       res.status(500).json({ error: error instanceof Error ? error.message : "Internal server error" });
