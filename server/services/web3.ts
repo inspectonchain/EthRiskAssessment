@@ -58,14 +58,62 @@ export class Web3Service {
       const response = await fetch(url);
       const data = await response.json();
       
+      console.log(`Transaction count API response for ${address}:`, data);
+      
+      if (data.status === "0" || data.message === "NOTOK") {
+        console.warn("API issue with transaction count, using fallback method");
+        return await this.getTransactionCountFromNonce(address);
+      }
+      
       if (!data.result) {
-        throw new Error(`Etherscan API error: ${data.error || 'Unknown error'}`);
+        console.warn("No result in transaction count response, using fallback");
+        return await this.getTransactionCountFromNonce(address);
       }
       
       return parseInt(data.result, 16);
     } catch (error) {
       console.error("Error fetching transaction count:", error);
-      throw new Error("Failed to fetch transaction count");
+      return await this.getTransactionCountFromNonce(address);
+    }
+  }
+
+  private async getTransactionCountFromNonce(address: string): Promise<number> {
+    try {
+      // Use the txlist endpoint to get actual transaction count
+      const url = `${this.etherscanBaseUrl}?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=1&sort=desc&apikey=${this.etherscanApiKey}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      if (data.status === "1" && data.result && data.result.length > 0) {
+        // Get the most recent transaction's nonce + 1 to get total count
+        const latestTx = data.result[0];
+        return parseInt(latestTx.nonce, 10) + 1;
+      }
+      
+      // If API fails, count manually by fetching all pages
+      let totalCount = 0;
+      let page = 1;
+      const offset = 1000;
+      
+      while (true) {
+        const pageUrl = `${this.etherscanBaseUrl}?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=${page}&offset=${offset}&sort=desc&apikey=${this.etherscanApiKey}`;
+        const pageResponse = await fetch(pageUrl);
+        const pageData = await pageResponse.json();
+        
+        if (!pageData.result || pageData.result.length === 0) break;
+        
+        totalCount += pageData.result.length;
+        if (pageData.result.length < offset) break; // Last page
+        page++;
+        
+        // Prevent infinite loops
+        if (page > 100) break;
+      }
+      
+      return totalCount;
+    } catch (error) {
+      console.error("Fallback transaction count failed:", error);
+      return 0;
     }
   }
 
