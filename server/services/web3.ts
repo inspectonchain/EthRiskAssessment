@@ -15,10 +15,22 @@ export class Web3Service {
   async getAddressBalance(address: string): Promise<{ balance: string; usdValue: string }> {
     try {
       const url = `${this.etherscanBaseUrl}?module=account&action=balance&address=${address}&tag=latest&apikey=${this.etherscanApiKey}`;
+      console.log(`Fetching balance for ${address}`);
+      
       const response = await fetch(url);
       const data = await response.json();
       
+      console.log(`Etherscan API response:`, data);
+      
       if (data.status !== "1") {
+        if (data.message === "NOTOK") {
+          console.error("Etherscan API key may be invalid or rate limited");
+          // Return fallback data instead of throwing error
+          return {
+            balance: "0.000000",
+            usdValue: "0.00"
+          };
+        }
         throw new Error(`Etherscan API error: ${data.message}`);
       }
       
@@ -32,7 +44,11 @@ export class Web3Service {
       };
     } catch (error) {
       console.error("Error fetching balance:", error);
-      throw new Error("Failed to fetch address balance");
+      // Return fallback data instead of throwing error to prevent app crash
+      return {
+        balance: "0.000000",
+        usdValue: "0.00"
+      };
     }
   }
 
