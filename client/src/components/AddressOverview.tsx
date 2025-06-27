@@ -61,7 +61,7 @@ export function AddressOverview({ analysis }: AddressOverviewProps) {
             <div>
               <label className="text-sm font-medium text-muted-foreground">Total Transactions</label>
               <p className="text-sm text-foreground">
-                {analysis.transactionCount.toLocaleString()}
+                {(analysis.transactionCount || 0).toLocaleString()}
               </p>
             </div>
           </div>
