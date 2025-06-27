@@ -40,28 +40,28 @@ export function AddressOverview({ analysis }: AddressOverviewProps) {
             <div>
               <label className="text-sm font-medium text-muted-foreground">Current ETH Balance</label>
               <p className="text-lg font-semibold text-foreground">
-                {analysis.balance.balance === "0.000000" ? "API key required" : `${analysis.balance.balance} ETH`}
+                {analysis.balance.balance} ETH
               </p>
             </div>
             
             <div>
               <label className="text-sm font-medium text-muted-foreground">USD Value</label>
               <p className="text-lg font-semibold text-foreground">
-                {analysis.balance.usdValue === "0.00" ? "API key required" : `$${analysis.balance.usdValue}`}
+                ${analysis.balance.usdValue}
               </p>
             </div>
             
             <div>
               <label className="text-sm font-medium text-muted-foreground">First Transaction</label>
               <p className="text-sm text-foreground">
-                {formatDate(analysis.firstTransaction) === "Unknown" ? "API key required" : formatDate(analysis.firstTransaction)}
+                {formatDate(analysis.firstTransaction)}
               </p>
             </div>
             
             <div>
               <label className="text-sm font-medium text-muted-foreground">Total Transactions</label>
               <p className="text-sm text-foreground">
-                {(analysis.transactionCount || 0) === 0 ? "API key required" : (analysis.transactionCount || 0).toLocaleString()}
+                {(analysis.transactionCount || 0).toLocaleString()}
               </p>
             </div>
           </div>

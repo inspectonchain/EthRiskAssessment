@@ -49,36 +49,57 @@ export class Web3Service {
 
   async getTransactionCount(address: string): Promise<number> {
     try {
-      const url = `${this.etherscanBaseUrl}?module=proxy&action=eth_getTransactionCount&address=${address}&tag=latest&apikey=${this.etherscanApiKey}`;
+      // Use txlist endpoint to get actual transaction count by fetching all transactions
+      const url = `${this.etherscanBaseUrl}?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=10000&sort=desc&apikey=${this.etherscanApiKey}`;
       const response = await fetch(url);
       const data = await response.json();
       
-      console.log(`Transaction count API response for ${address}:`, data);
+      console.log(`Transaction count API response for ${address}:`, data.status, data.result?.length || 0);
       
-      if (data.status === "0" || data.message === "NOTOK") {
-        console.warn("API issue with transaction count, using fallback method");
-        return await this.getTransactionCountFromNonce(address);
+      if (data.status !== "1" || !data.result) {
+        console.error("Failed to fetch transaction list");
+        return 0;
       }
       
-      if (!data.result) {
-        console.warn("No result in transaction count response, using fallback");
-        return await this.getTransactionCountFromNonce(address);
+      // If we got the maximum, we need to count across pages
+      if (data.result.length === 10000) {
+        return await this.getTransactionCountFromPages(address);
       }
       
-      return parseInt(data.result, 16);
+      return data.result.length;
     } catch (error) {
       console.error("Error fetching transaction count:", error);
-      return await this.getTransactionCountFromNonce(address);
+      return 0;
     }
   }
 
-  private async getTransactionCountFromNonce(address: string): Promise<number> {
+  private async getTransactionCountFromPages(address: string): Promise<number> {
     try {
-      // Without a valid API key, we cannot get accurate transaction counts
-      console.warn("Cannot fetch transaction count - API key required");
-      return 0;
+      let totalCount = 0;
+      let page = 1;
+      const offset = 10000;
+      
+      while (true) {
+        const url = `${this.etherscanBaseUrl}?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=${page}&offset=${offset}&sort=desc&apikey=${this.etherscanApiKey}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.status !== "1" || !data.result || data.result.length === 0) break;
+        
+        totalCount += data.result.length;
+        if (data.result.length < offset) break; // Last page
+        page++;
+        
+        // Prevent infinite loops
+        if (page > 50) break;
+        
+        // Rate limiting
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
+      return totalCount;
     } catch (error) {
-      console.error("Fallback transaction count failed:", error);
+      console.error("Error counting transactions across pages:", error);
       return 0;
     }
   }
