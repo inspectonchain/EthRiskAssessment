@@ -49,19 +49,7 @@ export function AddressOverview({ analysis }: AddressOverviewProps) {
               </p>
             </div>
             
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">First Transaction</label>
-              <p className="text-sm text-foreground">
-                {formatDate(analysis.firstTransaction)}
-              </p>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">Total Transactions</label>
-              <p className="text-sm text-foreground">
-                {analysis.transactionCount.toLocaleString()}
-              </p>
-            </div>
+
           </div>
         </CardContent>
       </Card>
