@@ -23,7 +23,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const [balance, tokenBalances, recentTransactions, transactionCount, firstTransaction] = await Promise.all([
         web3Service.getAddressBalance(address),
         web3Service.getTokenBalances(address),
-        web3Service.getRecentTransactions(address, 1000), // Get comprehensive transaction history for thorough analysis
+        web3Service.getRecentTransactions(address, 100), // Get recent transactions for analysis
         web3Service.getTransactionCount(address),
         web3Service.getFirstTransactionDate(address),
       ]);

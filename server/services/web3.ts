@@ -141,7 +141,7 @@ export class Web3Service {
     return null;
   }
 
-  async getRecentTransactions(address: string, maxCount: number = 10000): Promise<Array<{
+  async getRecentTransactions(address: string, maxCount: number = 100): Promise<Array<{
     hash: string;
     type: string;
     value: string;
