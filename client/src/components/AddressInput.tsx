@@ -68,6 +68,7 @@ export function AddressInput({ onAnalyze, isLoading }: AddressInputProps) {
               disabled={isLoading}
             />
             <p className="text-xs text-muted-foreground mt-1">Enter a valid Ethereum address (0x...)</p>
+            <p className="text-xs text-muted-foreground mt-1">To boost performance, the analysis is conducted for top 100 latest transactions</p>
           </div>
           <div className="flex flex-col justify-start">
             <div className="h-8 mt-[-3px] mb-[-3px]"></div>

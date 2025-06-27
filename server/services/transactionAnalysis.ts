@@ -170,7 +170,7 @@ export class TransactionAnalysisService {
       // Use the web3Service to avoid duplicate API calls and respect rate limits
       const transactions = await web3Service.getRecentTransactions(
         address,
-        10000,
+        100,
       );
       console.log(
         `Multi-hop: Getting transactions for ${address}, found ${transactions.length} transactions`,
